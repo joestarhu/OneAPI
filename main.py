@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.config.settings import settings  # noqa
+from api.api import router
 
 
 def init_app() -> FastAPI:
@@ -16,6 +17,8 @@ def init_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(router)
 
     return app
 

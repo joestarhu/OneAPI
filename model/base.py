@@ -1,6 +1,13 @@
 from datetime import datetime
 from sqlalchemy import create_engine, BigInteger, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped as M, mapped_column as mc
+from sqlalchemy.orm import DeclarativeBase, Mapped as M, mapped_column as mc, sessionmaker
+
+from api.config.settings import settings  # noqa
+
+
+engine = create_engine(url=settings.db_rds, echo=False,
+                       pool_recycle=settings.pool_recycle_seconds)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 class ModelBase(DeclarativeBase):
