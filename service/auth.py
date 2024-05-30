@@ -32,6 +32,21 @@ class AuthAPI:
         return jwt_api.encode(**payload)
 
     @staticmethod
+    def jwt_decode(token: str) -> dict:
+        """jwt解构
+        """
+        try:
+            jwt_data = jwt_api.decode(token)
+
+            payload = {}
+            for kw in JwtPayload.model_fields.keys():
+                payload[kw] = jwt_data.get(kw, None)
+        except Exception as e:
+            raise RspError(401, "无效的用户token", f"{e}")
+
+        return payload
+
+    @staticmethod
     def password_login(db: Session, data: PasswordLogin) -> Rsp:
         """密码登录
         """
