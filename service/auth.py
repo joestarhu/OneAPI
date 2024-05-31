@@ -6,6 +6,13 @@ from api.model.user import User, UserAuth, UserSettings  # noqa
 from api.service.base import ORM, Rsp, RspError, Pagination  # noqa
 
 
+class AuthErrCode:
+    # 账户被停用
+    ERR_ACCOUNT_STATUS_DISABLE: int = 1000
+    # 账户或密码错误
+    ERR_PASSWORD_LOGIN: int = 1001
+
+
 class JwtUser(BaseModel):
     user_id: int
     nick_name: str
@@ -76,10 +83,10 @@ class AuthAPI:
         info = ORM.one(db, stmt)
 
         if info is None or hash_api.verify(password, info["auth_value"]) == False:
-            return Rsp(code=1, message="抱歉,您的账号或密码错误")
+            return Rsp(code=AuthErrCode.ERR_PASSWORD_LOGIN, message="抱歉,您的账号或密码错误")
 
         if info["status"] == UserSettings.STATUS_DISABLE:
-            return Rsp(code=1, message="抱歉,您的账号已被停用")
+            return Rsp(code=AuthErrCode.ERR_ACCOUNT_STATUS_DISABLE, message="抱歉,您的账号已被停用")
 
         jwt_user = JwtUser(user_id=info["id"], nick_name=info["nick_name"])
 

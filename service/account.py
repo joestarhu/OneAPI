@@ -4,6 +4,7 @@ from sqlalchemy.orm.session import Session
 from api.config.security import FieldSecurity, hash_api  # noqa
 from api.config.settings import settings  # noqa
 from api.model.user import User, UserAuth, UserSettings  # noqa
+from api.model.org import Org  # noqa
 from api.service.base import ORM, Rsp, RspError, Pagination, ActInfo  # noqa
 
 
@@ -33,7 +34,23 @@ class AccountUpdate(BaseModel):
     status: int = Field(description="用户状态")
 
 
+class AccountDelete(BaseModel):
+    user_id: int = Field(description="用户ID")
+
+
 class AccountAPI:
+    @staticmethod
+    def is_org_admin(db: Session, user_id: int) -> bool:
+        """判断用户是否是组织的管理员
+        """
+        stmt = select(Org.id).where(
+            and_(
+                Org.deleted == False,
+                Org.owner_id == user_id
+            )
+        )
+        return ORM.counts(db, stmt) > 0
+
     @staticmethod
     def unique_chk(db: Session, account: str, phone_enc: str, except_id: int = None) -> Rsp | None:
         """判断账户唯一性
@@ -165,4 +182,20 @@ class AccountAPI:
         )
 
         ORM.commit(db, stmt)
+        return Rsp()
+
+    @staticmethod
+    def delete_account(db: Session, act: ActInfo, data: AccountDelete) -> Rsp:
+        if AccountAPI.is_org_admin(db, data.user_id):
+            return Rsp(code=1, message="组织所有者不能被删除")
+
+        # 非组织管理者可被移除(逻辑移除)
+        stmt = update(User).where(
+            User.id == data.user_id
+        ).values(
+            deleted=True
+        )
+
+        ORM.commit(db, stmt)
+
         return Rsp()
