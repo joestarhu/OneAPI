@@ -1,9 +1,10 @@
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, select
 from sqlalchemy.orm.session import Session
-from api.config.security import FieldSecurity  # noqa
+from api.config.security import FieldSecurity, hash_api  # noqa
+from api.config.settings import settings  # noqa
 from api.model.user import User, UserAuth, UserSettings  # noqa
-from api.service.base import ORM, Rsp, Pagination  # noqa
+from api.service.base import ORM, Rsp, RspError, Pagination, ActInfo  # noqa
 
 
 class AccountList(Pagination):
@@ -17,6 +18,13 @@ class AccountCreate(BaseModel):
     phone: str = Field(description="手机号")
     nick_name: str = Field(description="用户昵称")
     status: int = Field(description="用户状态")
+
+
+class AccountAuthCreate(BaseModel):
+    user_id: int | None = None
+    auth_type: int = UserSettings.AUTH_TYPE_PASSWORD
+    auth_code: str = ""
+    auth_value: str = hash_api.hash(settings.default_passwd)
 
 
 class AccountAPI:
@@ -87,3 +95,53 @@ class AccountAPI:
                                 )
 
         return Rsp(data=result)
+
+    @staticmethod
+    def get_detail(db: Session, user_id: int) -> Rsp:
+        """获取账户详情
+        """
+        stmt = select(
+            User.id,
+            User.account,
+            User.phone,
+            User.nick_name,
+            User.status,
+        ).where(
+            and_(
+                User.deleted == False,
+                User.id == user_id
+            )
+        )
+
+        result = ORM.one(db, stmt, fmt_rules=[
+                         ('phone', FieldSecurity.phone_decrypt)])
+
+        return Rsp(data=result)
+
+    @staticmethod
+    def create_account(db: Session, act: ActInfo, data: AccountCreate, auth_data: AccountAuthCreate = AccountAuthCreate()) -> Rsp:
+        """
+        """
+
+        # 加密手机号
+        data.phone = FieldSecurity.phone_encrypt(data.phone)
+
+        # 唯一性检测
+        if rsp := AccountAPI.unique_chk(db, account=data.account, phone_enc=data.phone):
+            return rsp
+
+        try:
+            data_user = User(**data.model_dump(), **act.insert_info)
+            db.add(data_user)
+            db.flush()
+
+            auth_data.user_id = data_user.id
+            data_auth = UserAuth(**auth_data.model_dump(), **act.insert_info)
+            db.add(data_auth)
+
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            raise RspError(data=f"{e}")
+
+        return Rsp()

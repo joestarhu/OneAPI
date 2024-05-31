@@ -1,10 +1,19 @@
 from typing import Generator
+from dataclasses import dataclass
 from fastapi import Query, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm.session import Session
+
 
 from api.model.base import SessionLocal  # noqa
 from api.service.base import ActInfo  # noqa
 from api.service.auth import AuthAPI  # noqa
+
+
+@dataclass
+class Actor:
+    db: Session
+    act: ActInfo | None = None
 
 
 def get_db() -> Generator:
@@ -23,10 +32,10 @@ def get_page(page_idx: int = Query(default=1, description="页数"), page_size: 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="/dummy/login")
 
 
-def user_auth(*, db=Depends(get_db), token=Depends(oauth2_schema), req: Request) -> dict:
+def user_auth(*, db=Depends(get_db), token=Depends(oauth2_schema), req: Request) -> Actor:
     """从JWT中获取用户信息,并鉴权是否具备权限
     """
-
+    actor = Actor(db=db)
     payload = AuthAPI.jwt_decode(token)
     user = payload["user"]
     # permission = payload.get("permission",None)
@@ -37,5 +46,5 @@ def user_auth(*, db=Depends(get_db), token=Depends(oauth2_schema), req: Request)
     #     raise RspError(code=403,message="无权限")
 
     # act = ActInfo(user_id = user["user_id"],org_id=payload["login_org"])
-    act = ActInfo(user_id=user["user_id"])
-    return dict(db=db, act=act)
+    actor.act = ActInfo(user_id=user["user_id"])
+    return actor
