@@ -4,7 +4,6 @@ from fastapi import Query, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm.session import Session
 
-
 from api.model.base import SessionLocal  # noqa
 from api.service.base import ActInfo  # noqa
 from api.service.auth import AuthAPI  # noqa

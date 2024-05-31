@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, update
 from sqlalchemy.orm.session import Session
 from api.config.security import FieldSecurity, hash_api  # noqa
 from api.config.settings import settings  # noqa
@@ -25,6 +25,12 @@ class AccountAuthCreate(BaseModel):
     auth_type: int = UserSettings.AUTH_TYPE_PASSWORD
     auth_code: str = ""
     auth_value: str = hash_api.hash(settings.default_passwd)
+
+
+class AccountUpdate(BaseModel):
+    user_id: int = Field(description="用户ID")
+    nick_name: str = Field(description="用户昵称")
+    status: int = Field(description="用户状态")
 
 
 class AccountAPI:
@@ -144,4 +150,19 @@ class AccountAPI:
             db.rollback()
             raise RspError(data=f"{e}")
 
+        return Rsp()
+
+    @staticmethod
+    def update_account(db: Session, act: ActInfo, data: AccountUpdate) -> Rsp:
+        """
+        """
+        stmt = update(User).where(
+            User.id == data.user_id
+        ).values(
+            nick_name=data.nick_name,
+            status=data.status,
+            **act.update_info,
+        )
+
+        ORM.commit(db, stmt)
         return Rsp()

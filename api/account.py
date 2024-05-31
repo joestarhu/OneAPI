@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from api.api.base import get_page, user_auth
-from api.service.account import AccountAPI, AccountList, AccountCreate  # noqa
+from api.service.account import AccountAPI, AccountList, AccountCreate, AccountUpdate  # noqa
 
 api = APIRouter(prefix="/account")
 
@@ -26,8 +26,8 @@ def account_create(*, actor=Depends(user_auth), data: AccountCreate):
 
 
 @api.post("/update", summary="修改账户")
-def account_update(*, actor=Depends(user_auth)):
-    return {}
+def account_update(*, actor=Depends(user_auth), data: AccountUpdate):
+    return AccountAPI.update_account(actor.db, actor.act, data)
 
 
 @api.post("/delete", summary="删除账户")
