@@ -31,6 +31,14 @@ def get_page(page_idx: int = Query(default=1, description="页数"), page_size: 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="/dummy/login")
 
 
+def get_user_id(token=Depends(oauth2_schema)) -> int:
+    """
+    """
+    payload = AuthAPI.jwt_decode(token)
+    user = payload["user"]
+    return user["user_id"]
+
+
 def user_auth(*, db=Depends(get_db), token=Depends(oauth2_schema), req: Request) -> Actor:
     """从JWT中获取用户信息,并鉴权是否具备权限
     """
