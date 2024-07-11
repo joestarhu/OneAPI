@@ -1,4 +1,3 @@
-
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
@@ -20,6 +19,9 @@ class AppSettings(BaseSettings):
 
     # CORS配置
     allow_origins: list[str] = ["*"]
+    allow_credentials: bool = True
+    allow_methods: list[str] = ["*"]
+    allow_headers: list[str] = ["*"]
 
     # 安全相关
     default_passwd: str = "default_passwd"
@@ -43,6 +45,15 @@ class AppSettings(BaseSettings):
             redoc_url=self.redoc_url,
             title=self.title,
             version=self.version
+        )
+
+    @property
+    def fastapi_cors_kwargs(self) -> dict:
+        return dict(
+            allow_origins=self.allow_origins,
+            allow_credentials=self.allow_credentials,
+            allow_methods=self.allow_methods,
+            allow_headers=self.allow_headers
         )
 
 
