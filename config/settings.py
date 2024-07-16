@@ -16,6 +16,8 @@ class AppSettings(BaseSettings):
     redoc_url: str = "/redoc"
     title: str = "One"
     version: str = "1.0.0"
+    swagger_js_url: str = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.4/swagger-ui-bundle.js"
+    swagger_css_url: str = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.4/swagger-ui.css"
 
     # CORS配置
     allow_origins: list[str] = ["*"]
@@ -44,7 +46,9 @@ class AppSettings(BaseSettings):
             docs_url=self.docs_url,
             redoc_url=self.redoc_url,
             title=self.title,
-            version=self.version
+            version=self.version,
+            swagger_js_url=self.swagger_js_url,
+            swagger_css_url=self.swagger_css_url
         )
 
     @property
