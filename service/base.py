@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import TypeVar, Dict, Any
 from math import ceil
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
@@ -8,13 +8,34 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import BinaryExpression
 
 
+T_RSPDATA = TypeVar("T_RSPDATA", dict, list, None)
+
+
+class Rsp(BaseModel):
+    """请求成功返回信息
+    """
+    code: int = Field(default=0, description="请求结果代码;0表示成功")
+    message: str = Field(default="Succeed", description="请求结果消息描述")
+    data: T_RSPDATA = None
+
+
+class JWT(BaseModel):
+    """JWT请求体
+    """
+    user_id: int
+    org_id: int
+
+
 class ActInfo(BaseModel):
     """操作信息
     """
+
     user_id: int = Field(description="用户ID")
     org_id: int | None = Field(default=None, description="登录组织ID")
     url_path: str = Field(default="", description="请求路由标识")
-    # act_datetime:datetime = Field(default=datetime.now(ZoneInfo("UTC")),description="操作数据时间")
+
+    # db: Session | None = Field(default=None, description="数据库会话")
+    # account_id: int | None = Field(default=None, description="操作账户ID")
 
     @property
     def insert_info(self) -> dict:
@@ -29,14 +50,6 @@ class ActInfo(BaseModel):
     @property
     def update_info(self) -> dict:
         return dict(update_id=self.user_id, update_dt=datetime.now())
-
-
-class Rsp(BaseModel):
-    """请求成功返回信息
-    """
-    code: int = Field(default=0, description="请求结果代码;0表示成功")
-    message: str = Field(default="成功", description="请求结果消息描述")
-    data: Any = None
 
 
 class RspError(HTTPException):

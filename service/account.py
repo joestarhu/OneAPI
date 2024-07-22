@@ -1,201 +1,116 @@
-from pydantic import BaseModel, Field
-from sqlalchemy import and_, select, update
-from sqlalchemy.orm.session import Session
-from api.config.security import FieldSecurity, hash_api  # noqa
-from api.config.settings import settings  # noqa
-from api.model.user import User, UserAuth, UserSettings  # noqa
-from api.model.org import Org  # noqa
-from api.service.base import ORM, Rsp, RspError, Pagination, ActInfo  # noqa
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import select, and_
+from jhu.orm import ORM, ORMFormatRule
+from api.model.user import User, UserAuth, UserSettings, UserAPI
+from api.config.security import FieldSecurity
+from api.config.settings import settings
+from .deps import get_page, get_actor, Rsp, http_wrapper
+
+api = APIRouter(prefix="/account")
 
 
-class AccountList(Pagination):
-    phone: str | None = Field(description="手机号")
-    nick_name: str | None = Field(description="用户昵称")
-    status: int | None = Field(description="用户状态")
+format_rules = [ORMFormatRule("phone", FieldSecurity.phone_decrypt)]
 
 
 class AccountCreate(BaseModel):
-    account: str = Field(description="账号")
-    phone: str = Field(description="手机号")
-    nick_name: str = Field(description="用户昵称")
-    status: int = Field(description="用户状态")
-
-
-class AccountAuthCreate(BaseModel):
-    user_id: int | None = None
-    auth_type: int = UserSettings.AUTH_TYPE_PASSWORD
-    auth_code: str = ""
-    auth_value: str = hash_api.hash(settings.default_passwd)
+    account: str
+    nick_name: str
+    phone: str
+    status: int
 
 
 class AccountUpdate(BaseModel):
-    user_id: int = Field(description="用户ID")
-    nick_name: str = Field(description="用户昵称")
-    status: int = Field(description="用户状态")
+    user_id: int
+    nick_name: str
+    status: int
 
 
 class AccountDelete(BaseModel):
-    user_id: int = Field(description="用户ID")
+    user_id: int
 
 
-class AccountAPI:
-    @staticmethod
-    def is_org_admin(db: Session, user_id: int) -> bool:
-        """判断用户是否是组织的管理员
-        """
-        stmt = select(Org.id).where(
-            and_(
-                Org.deleted == False,
-                Org.owner_id == user_id
-            )
-        )
-        return ORM.counts(db, stmt) > 0
+@api.get("/list")
+async def get_account_list(phone: str = "", nick_name: str = "", status: int = None, page=Depends(get_page), act=Depends(get_actor)) -> Rsp:
+    # 查询条件构造
+    expressions = [expression for condition, expression in [
+        (phone, User.phone.contains(FieldSecurity.phone_encrypt(phone))),
+        (nick_name, User.nick_name.contains(nick_name)),
+        (status is not None, User.status == status)
+    ] if condition]
 
-    @staticmethod
-    def unique_chk(db: Session, account: str, phone_enc: str, except_id: int = None) -> Rsp | None:
-        """判断账户唯一性
+    stmt = select(
+        User.id,
+        User.account,
+        User.nick_name,
+        User.phone,
+        User.status,
+        User.create_dt,
+        User.update_dt
+    ).where(
+        and_(User.deleted == False, *expressions)
+    )
+    # 分页查询处理
+    try:
+        data = ORM.pagination(act.db, stmt,
+                              page_idx=page["page_idx"],
+                              page_size=page["page_size"],
+                              order=[User.create_dt.desc()],
+                              format_rules=format_rules)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
-        Args:
-            db: 数据库会话
-            account: 账户
-            phone_enc: 加密的手机号
-            except_id: 不在唯一性判定内的账户ID,用于修改
+    return Rsp(data=data)
 
-        Return:
-            None: 成功,无重复数据
-            Rsp: 失败,出现重复数据
-        """
-        if except_id is None:
-            expression = None
-        else:
-            expression = User.id != except_id
 
-        rules = [
-            ("账号已被使用", and_(User.account == account, User.deleted == False)),
-            ("手机号已被使用", and_(User.phone == phone_enc, User.deleted == False)),
-        ]
+@api.get("/detail")
+async def get_account_detail(user_id: int, act=Depends(get_actor)) -> Rsp:
 
-        return ORM.unique_chk(db, rules, expression)
+    stmt = select(
+        User.id,
+        User.account,
+        User.phone,
+        User.nick_name,
+        User.status
+    ).where(
+        and_(User.deleted == False, User.id == user_id)
+    )
 
-    @staticmethod
-    def get_list(db: Session, data: AccountList) -> Rsp:
-        """获取账户列表信息
+    data = ORM.one(act.db, stmt, format_rules)
 
-        Args:
-            db: 数据库会话
-            data: 查询数据对象
+    return Rsp(data=data)
 
-        Return:
-            Rsp:返回HttpResponse;如有失败会抛出异常
-        """
 
-        # 查询用户的信息
-        stmt = select(
-            User.id, User.phone, User.account, User.nick_name, User.status, User.update_dt, User.create_dt
-        ).where(
-            User.deleted == False
-        )
+@api.post("/create")
+async def create_account(data: AccountCreate, act=Depends(get_actor)) -> Rsp:
+    user = User(**data.model_dump(), **act.db_create)
+    user_auth = UserAuth(auth_type=UserSettings.AUTH_TYPE_PASSWORD,
+                         auth_identify="", auth_value=settings.default_passwd, **act.db_create)
 
-        # 模糊匹配用户昵称
-        if data.nick_name:
-            stmt = stmt.where(User.nick_name.contains(data.nick_name))
+    try:
+        err_info = UserAPI.create(act.db, user, user_auth)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
 
-        # 模糊匹配用户手机号
-        if data.phone:
-            stmt = stmt.where(
-                User.phone.contains(FieldSecurity.phone_encrypt(data.phone))
-            )
+    return Rsp(**err_info.value)
 
-        # 精准匹配用户状态
-        if data.status is not None:
-            stmt = stmt.where(User.status == data.status)
 
-        # 用户创建时间倒序排序分页查询
-        result = ORM.pagination(db, stmt, page_idx=data.page_idx, page_size=data.page_size,
-                                order=[User.create_dt.desc()],
-                                fmt_rules=[
-                                    ('phone', FieldSecurity.phone_decrypt)]
-                                )
+@api.post("/update")
+async def update_account(data: AccountUpdate, act=Depends(get_actor)) -> Rsp:
+    try:
+        user = User(id=data.user_id, nick_name=data.nick_name,
+                    status=data.status, **act.db_update)
+        err_info = UserAPI.update(act.db, user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    return Rsp(**err_info.value)
 
-        return Rsp(data=result)
 
-    @staticmethod
-    def get_detail(db: Session, user_id: int) -> Rsp:
-        """获取账户详情
-        """
-        stmt = select(
-            User.id,
-            User.account,
-            User.phone,
-            User.nick_name,
-            User.status,
-        ).where(
-            and_(
-                User.deleted == False,
-                User.id == user_id
-            )
-        )
-
-        result = ORM.one(db, stmt, fmt_rules=[
-                         ('phone', FieldSecurity.phone_decrypt)])
-
-        return Rsp(data=result)
-
-    @staticmethod
-    def create_account(db: Session, act: ActInfo, data: AccountCreate, auth_data: AccountAuthCreate = AccountAuthCreate()) -> Rsp:
-        """
-        """
-
-        # 加密手机号
-        data.phone = FieldSecurity.phone_encrypt(data.phone)
-
-        # 唯一性检测
-        if rsp := AccountAPI.unique_chk(db, account=data.account, phone_enc=data.phone):
-            return rsp
-
-        try:
-            data_user = User(**data.model_dump(), **act.insert_info)
-            db.add(data_user)
-            db.flush()
-
-            auth_data.user_id = data_user.id
-            data_auth = UserAuth(**auth_data.model_dump(), **act.insert_info)
-            db.add(data_auth)
-
-            db.commit()
-        except Exception as e:
-            db.rollback()
-            raise RspError(data=f"{e}")
-
-        return Rsp()
-
-    @staticmethod
-    def update_account(db: Session, act: ActInfo, data: AccountUpdate) -> Rsp:
-        """
-        """
-        stmt = update(User).where(
-            User.id == data.user_id
-        ).values(
-            nick_name=data.nick_name,
-            status=data.status,
-            **act.update_info,
-        )
-
-        ORM.commit(db, stmt)
-        return Rsp()
-
-    @staticmethod
-    def delete_account(db: Session, act: ActInfo, data: AccountDelete) -> Rsp:
-        if AccountAPI.is_org_admin(db, data.user_id):
-            return Rsp(code=1, message="组织所有者不能被删除")
-
-        # 非组织管理者可被移除(逻辑移除)
-        stmt = update(User).where(
-            User.id == data.user_id
-        ).values(
-            deleted=True
-        )
-
-        ORM.commit(db, stmt)
-
-        return Rsp()
+@api.post("/delete")
+async def delete_account(data: AccountDelete, act=Depends(get_actor)) -> Rsp:
+    try:
+        user = User(id=data.user_id, **act.db_update)
+        err_info = UserAPI.delete(act.db, user)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{e}")
+    return Rsp(**err_info.value)
