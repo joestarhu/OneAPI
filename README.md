@@ -1,46 +1,29 @@
-[toc]
-
 # OneAPI
-统一用户中心(One)的API服务
+> OneAPI是基于Python的Web框架:FastAPI开发的一个统一用户中心的服务。OneAPI作为平台方，旨在提供一套全局统一且通用的用户体系，帮助业务系统或应用减少开发相关的底层用户体系，并在业务形态上支持toB,toC,toBtoB,toBtoC的平台化服务。
 
+# 账号
+> 账号是OneAPI的基础数据，用户在多系统(※接入OneAPI的)之间，可通过账号信息来打通相关的业务数据
+- 账户ID，手机号是唯一标识；其中，三方登录的时候，可通过手机号来关联到一个账号上
 
-# 账号&组织
 ```mermaid
 erDiagram
-a["账户信息"]{
+a["账号信息"]{
 	id bigint pk "账号ID"
-	account string(128) uk "账号"
-	phone string(256) uk "手机号,加密存储"
-	nick_name string(128) "用户昵称"
-	status smallint "账号状态 0:disable 1:enable"
-	deleted smallint "逻辑删除标识 0:未删除 1:已删除" 
+	account str(128) uk "用户账号,全局唯一"
+	phone str(256) uk "用户手机号,全局唯一"
+	nick_name str(128) "用户昵称"
+	status smallint "状态 0:停用,1:启用"
+	deleted smallint "逻辑删除标志 0:未删除 1:已删除"
 }
 
-b["账户认证信息"]{
+b["账号认证信息"]{
 	id bigint pk "ID"
-	account_id bigint fk "账户ID,来自Account"
+	account_id bigint fk "账号ID"
 	auth_type int "认证类型"
-	auth_identity string "认证标识"
-	auth_val string "认证值；如密码或token"
+	auth_identify str(256) "认证类型标识"
+	auth_value str(256) "认证类型值"
 }
 
-c["组织"]{
-	id bigint pk "组织ID"
-	string(128) name uk "组织名"
-	string(256) remark "组织备注"
-	bigint owner_id "组织所有者账号ID"
-	smallint is_admin "是否为管理员组织 0:False, 1:True"
-	smallint status "组织状态 0:disable 1:enable"
-	smallint deleted "逻辑删除标识 0:未删除 1:已删除" 
-} 
-
-d["组织用户"]{
-	bigint id pk "ID"
-	bigint account_id fk "账号ID"
-	bigint org_id fk "组织ID"
-	string(128) name "组织用户名"
-	smallint status "组织下用户状态 0:disable 1:enable"	
-}
-
-a || -- |{ b : "一个账户可以有多种认证信息"
+a || -- |{b : "一个账号可拥有多种认证方式"
 ```
+
