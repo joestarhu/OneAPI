@@ -22,7 +22,7 @@ class AppSettings(BaseSettings):
     # CORS配置
     allow_origins: list[str] = ["*"]
     allow_credentials: bool = True
-    allow_methods: list[str] = ["*"]
+    allow_methods: list[str] = ["POST", "GET"]
     allow_headers: list[str] = ["*"]
 
     # 安全相关

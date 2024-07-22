@@ -1,6 +1,5 @@
-from jhu.security import AESAPI, HashAPI, JWTAPI  # noqa
-from jhu.auth import ThridAuth, AuthType  # noqa
-from api.config.settings import settings  # noqa
+from jhu.security import AESAPI, HashAPI, JWTAPI
+from api.config.settings import settings
 
 # 用于服务端的加密
 aes_api = AESAPI(settings.encrypt_key)
