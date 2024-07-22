@@ -6,6 +6,7 @@ from jhu.orm import ORM, ORMCheckRule
 from api.config.security import FieldSecurity, hash_api
 from api.config.errcode import ErrCode
 from .base import ModelBase
+from .org import Org
 
 
 class UserSettings:
@@ -121,12 +122,21 @@ class UserAPI:
             user: 仅需要填入id,update_id和update_dt即可
         """
         try:
+            # 待删除的用户ID
+            user_id = user.id
+
+            # 如果账户是某组织的owner,则不能被删除
+            stmt = select(Org.owner_id).where(
+                and_(Org.deleted == False, Org.owner_id == user_id))
+            if ORM.counts(db, stmt) > 0:
+                return ErrCode.OWNER_DELETE_NOW_ALLOW
+
             # 删除用的替代字符.
             delete_value = str(uuid4())
 
             for stmt in [
-                delete(UserAuth).where(UserAuth.user_id == user.id),
-                update(User).where(User.id == user.id).values(
+                delete(UserAuth).where(UserAuth.user_id == user_id),
+                update(User).where(User.id == user_id).values(
                     deleted=True,
                     account=delete_value,
                     phone=delete_value,

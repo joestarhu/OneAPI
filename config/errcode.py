@@ -23,3 +23,6 @@ class ErrCode:
     WRONG_ACCOUNT_PASSWD = ErrInfo(1003, "Wrong account or password")
     # 用户状态被停用
     STATUS_DISBALE = ErrInfo(1004, "User status is disable")
+    # 组织的所有者
+    OWNER_DELETE_NOW_ALLOW = ErrInfo(
+        1005, "Organization owner is not allowed to be deleted")
