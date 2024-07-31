@@ -5,17 +5,15 @@ from api.service import router
 
 
 def init_app() -> FastAPI:
-    """初始化fastapi
-    """
+    """初始化应用"""
     app = FastAPI(**settings.fastapi_kwargs)
 
-    # CORS跨域
+    app.include_router(router)
+
     app.add_middleware(
         CORSMiddleware,
         **settings.fastapi_cors_kwargs
     )
-
-    app.include_router(router)
 
     return app
 
