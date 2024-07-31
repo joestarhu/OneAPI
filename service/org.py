@@ -1,59 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from jhu.orm import ORM
-from sqlalchemy import select, and_
-from api.model.user import User
-from api.model.org import Org, OrgUser
-from .deps import get_page, get_actor, Rsp, http_wrapper
+from api.schema.org import OrgAPI
+from .base import get_actor_info, get_pagination, Rsp
+
+
 api = APIRouter(prefix="/org")
 
 
 @api.get("/list")
-async def get_org_list(org_name: str = "", status: int = None, page=Depends(get_page), act=Depends(get_actor)) -> Rsp:
+async def get_org_list(actor=Depends(get_actor_info),
+                       pagination=Depends(get_pagination),
+                       org_name: str = Query(default="", description="组织名"),
+                       status: int = Query(default=None, description="组织状态")
+                       ):
     try:
-        expressions = [expression for condition, expression in [
-            (org_name, Org.org_name.contains(org_name)),
-            (status is not None, Org.status == status)
-        ] if condition]
-
-        stmt = select(
-            Org.id,
-            Org.org_name,
-            User.nick_name.label("owner_name"),
-            Org.remark,
-            Org.status,
-            Org.owner_id,
-            Org.create_dt,
-            Org.update_dt
-        ).join_from(
-            Org, User, Org.owner_id == User.id, isouter=True
-        ).where(
-            and_(Org.deleted == False, *expressions)
-        )
-
-        result = ORM.pagination(act.db, stmt, page_idx=page["page_idx"],
-                                page_size=page["page_size"], order=[Org.create_dt.desc()])
+        data = OrgAPI.get_org_list(
+            actor.session, org_name, status, pagination.page_idx, pagination.page_size)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{e}")
-
-    return Rsp(data=result)
+        raise HTTPException(500, f"{e}")
+    return Rsp(data=data)
 
 
 @api.get("/detail")
-async def get_org_detail(org_id: int, act=Depends(get_actor)) -> Rsp:
+async def get_org_detail(actor=Depends(get_actor_info),
+                         org_id: int = Query(description="组织ID")
+                         ) -> Rsp:
     try:
-        stmt = select(
-            Org.id,
-            Org.owner_id,
-            Org.org_name,
-            Org.remark,
-            Org.status
-        ).where(
-            and_(Org.deleted == False, Org.id == org_id)
-        )
-
-        result = ORM.one(act.db, stmt)
+        data = OrgAPI.get_org_detail(actor.session, org_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"{e}")
-
-    return Rsp(data=result)
+        raise HTTPException(500, f"{e}")
+    return Rsp(data=data)
