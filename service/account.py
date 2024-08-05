@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from api.config.settings import settings
 from api.model.user import User, UserAuth
 from api.schema.account import AccountAPI, AccountCreate, AccountUpdate, AccountDelete
 
@@ -26,12 +25,11 @@ async def get_list(phone: str = Query(default="", description="手机号"),
 
 
 @api.get("/detail")
-async def get_detail(user_id: int = Query(description="用户ID"),
+async def get_detail(user_uuid: str = Query(description="用户UUID"),
                      actor=Depends(get_actor_info)
                      ) -> Rsp:
-    """更新账号"""
     try:
-        data = AccountAPI.get_account_detail(actor, user_id)
+        data = AccountAPI.get_account_detail(actor, user_uuid)
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)
@@ -43,11 +41,7 @@ async def create(data: AccountCreate,
                  ) -> Rsp:
     """创建账号"""
     try:
-        user = User(**data.model_dump(), **actor.create_info)
-        user_auth = UserAuth(
-            auth_value=settings.default_passwd, **actor.create_info)
-        result = AccountAPI.create_account(actor.session, user, user_auth)
-        print(result)
+        result = AccountAPI.create_account(actor, data)
     except Exception as e:
         raise HTTPException(500, f"{e}")
 
@@ -60,8 +54,7 @@ async def update(data: AccountUpdate,
                  ) -> Rsp:
     """更新账号"""
     try:
-        user = User(**data.model_dump(), **actor.update_info)
-        result = AccountAPI.update_account(actor.session, user)
+        result = AccountAPI.update_account(actor, data)
     except Exception as e:
         raise HTTPException(500, f"{e}")
 
@@ -74,7 +67,7 @@ async def delete(data: AccountDelete,
                  ) -> Rsp:
     """更新账号"""
     try:
-        result = AccountAPI.delete_account()
+        result = AccountAPI.delete_account(actor, data)
     except Exception as e:
         raise HTTPException(500, f"{e}")
 

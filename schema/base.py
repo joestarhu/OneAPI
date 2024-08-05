@@ -15,11 +15,17 @@ class Rsp(BaseModel):
 @dataclass
 class Jwt:
     """jwt相关信息"""
+    # 用户uuid
     user_uuid: str
+    # 组织uuid
     org_uuid: str | None = None
+    # 是否管理者组织(默认False)
+    org_is_admin: bool = False
+    # 是否组织所有有者(默认False)
+    org_owner: bool = False
 
-    # 后续需要移除
-    org_id: int = 1
+    # 权限范围
+    scope: list[str] | None = None
 
 
 @dataclass

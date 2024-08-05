@@ -1,10 +1,10 @@
-from uuid import uuid4
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update, delete, and_
 from sqlalchemy.orm import Session
 from jhu.orm import ORM, ORMFormatRule, ORMCheckRule
 from api.model.user import User, UserAuth, UserAuthType, UserStatus
-from api.config.security import phone_encrypt, phone_decrypy, hash_api
+from api.config.security import phone_encrypt, phone_decrypy, generate_uuid_str, hash_api
+from api.config.settings import settings
 from .base import Pagination, Actor
 from .errcode import APIErrors
 
@@ -22,13 +22,13 @@ class AccountCreate(BaseModel):
 
 
 class AccountUpdate(BaseModel):
-    user_id: int = Field(description="用户ID")
+    user_uuid: str = Field(descrixption="用户UUID")
     nick_name: str = Field(description="用户昵称")
     status: int = Field(description="用户状态")
 
 
 class AccountDelete(BaseModel):
-    user_id: int = Field(description="用户ID")
+    user_uuid: str = Field(descrixption="用户UUID")
 
 
 class AccountAPI:
@@ -42,7 +42,7 @@ class AccountAPI:
         ] if condition]
 
         statement = select(
-            User.user_id,
+            User.user_uuid,
             User.account,
             User.nick_name,
             User.phone,
@@ -55,7 +55,7 @@ class AccountAPI:
                               pagination.page_size, [User.create_dt.desc()], format_rules)
 
     @staticmethod
-    def get_account_detail(actor: Actor, user_id: int):
+    def get_account_detail(actor: Actor, user_uuid: str):
         """获取账号详情"""
         statement = select(
             User.user_id,
@@ -65,16 +65,16 @@ class AccountAPI:
             User.status
         ).where(and_(
             User.deleted == False,
-            User.user_id == user_id
+            User.user_uuid == user_uuid
         ))
 
         return ORM.one(actor.session, statement, format_rules)
 
     @staticmethod
-    def check_account_unique(session: Session, account: str = "", phone_hash: str = "", except_id: int = None) -> APIErrors | None:
+    def check_account_unique(session: Session, account: str = "", phone_hash: str = "", except_uuid: str = None) -> APIErrors | None:
         """唯一性校验"""
 
-        except_expression = None if except_id is None else User.user_id != except_id
+        except_expression = None if except_uuid is None else User.user_uuid != except_uuid
 
         orm_check_rules = [
             ORMCheckRule(APIErrors.PHONE_ALREADY_EXISTS,
@@ -86,43 +86,50 @@ class AccountAPI:
         return ORM.check(session, orm_check_rules, except_expression)
 
     @staticmethod
-    def create_account(session: Session, user: User, user_auth: UserAuth) -> APIErrors:
+    def create_account(actor: Actor, data: AccountCreate) -> APIErrors:
         """创建用户账号,所有需要加密存储的自动该函数会实施,入参无需处理"""
-        try:
 
-            user.phone = phone_encrypt(user.phone)
-            if result := AccountAPI.check_account_unique(session, user.account, user.phone):
+        try:
+            session = actor.session
+            phone_enc = phone_encrypt(data.phone)
+            if result := AccountAPI.check_account_unique(session, data.account, phone_enc):
                 return result
 
+            user = User(**data.model_dump(exclude=[
+                        "phone"]), **actor.create_info, phone=phone_enc, user_uuid=generate_uuid_str())
             session.add(user)
             session.flush()
 
-            # 用户ID刷新
-            user_auth.user_id = user.user_id
-
-            # 加密存储密码
-            if user_auth.auth_type == UserAuthType.PASSWORD.value:
-                user_auth.auth_value = hash_api.hash(user_auth.auth_value)
+            user_auth = UserAuth(user_id=user.user_id,
+                                 auth_type=UserAuthType.PASSWORD.value,
+                                 auth_identify="",
+                                 auth_value=hash_api.hash(
+                                     settings.default_passwd),
+                                 **actor.create_info
+                                 )
             session.add(user_auth)
 
             session.commit()
         except Exception as e:
             session.rollback()
             raise e
-
         return APIErrors.NO_ERROR
 
     @staticmethod
-    def update_account(session: Session, user: User) -> APIErrors:
+    def update_account(actor: Actor, data: AccountUpdate) -> APIErrors:
         """更新账户,仅更新 用户昵称和用户状态"""
         try:
-            statement = update(User).where(User.user_id == user.user_id).values(
-                nick_name=user.nick_name,
-                status=user.status,
-                update_id=user.update_id,
-                update_dt=user.update_dt
+            session = actor.session
+
+            stmt = update(User).where(
+                User.user_uuid == data.user_uuid
+            ).values(
+                nick_name=data.nick_name,
+                status=data.status,
+                **actor.update_info
             )
-            session.execute(statement)
+
+            session.execute(stmt)
             session.commit()
         except Exception as e:
             session.rollback()
@@ -131,17 +138,18 @@ class AccountAPI:
         return APIErrors.NO_ERROR
 
     @staticmethod
-    def delete_account(session: Session, user_id: int) -> APIErrors:
+    def delete_account(actor: Actor, data: AccountDelete) -> APIErrors:
         """删除账户"""
 
         try:
-            # 构建一个无意义的删除字符
-            delete_uuid = "del_"+"".join(str(uuid4()).split("-"))
+            session = actor.session
+            delete_uuid = data.user_uuid
 
             for statement in [
-                update(User).where(User.user_id == user_id).values(
+                update(User).where(User.user_uuid == delete_uuid).values(
                     deleted=True, account=delete_uuid, phone=delete_uuid),
-                delete(UserAuth).where(UserAuth.user_id == user_id)
+                delete(UserAuth).where(UserAuth.user_id == User.user_id).where(
+                    User.user_uuid == delete_uuid)
             ]:
                 session.execute(statement)
 

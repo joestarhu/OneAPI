@@ -1,3 +1,4 @@
+from uuid import uuid4
 from jhu.security import AESAPI, HashAPI, JWTAPI
 from .settings import settings
 
@@ -25,9 +26,6 @@ def phone_encrypt(plain_text: str) -> str:
         str:加密后的手机号
     """
     length = len(plain_text)
-    if length > 11:
-        raise ValueError("Phone Length need ≤ 11")
-
     end_pos = max(length-3, 0)
     return ",".join([server_aes_api.encrypt(plain_text[i:i+3]) for i in range(end_pos+1)])
 
@@ -50,3 +48,7 @@ def phone_decrypy(encrypted_text: str, mask: bool = True) -> str:
     if mask:
         phone = f"{phone[:3]}****{phone[7:]}"
     return phone
+
+
+def generate_uuid_str() -> str:
+    return "".join(str(uuid4()).split("-"))
