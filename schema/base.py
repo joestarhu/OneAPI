@@ -39,21 +39,5 @@ class Pagination:
 class Actor:
     """操作信息"""
     session: Session
-    user_id: int
-    org_id: int
-
-    @property
-    def create_info(self) -> dict:
-        user_id = self.user_id
-        dt = datetime.now()
-        return dict(create_id=user_id,
-                    update_id=user_id,
-                    create_dt=dt,
-                    update_dt=dt)
-
-    @property
-    def update_info(self) -> dict:
-        user_id = self.user_id
-        dt = datetime.now()
-        return dict(update_id=user_id,
-                    update_dt=dt)
+    user_uuid: str
+    org_uuid: str

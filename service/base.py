@@ -39,15 +39,6 @@ auth_bear = OAuth2PasswordBearer("/dummyUrl")
 def get_actor_info(token=Depends(auth_bear), session=Depends(get_session)) -> Actor:
     try:
         jwt = jwt_api.decode(token)
-
-        # 更具UUID换取实际业务的ID
-        data = AuthAPI.get_id_from_uuid(
-            session, jwt["user_uuid"], jwt["org_uuid"])
-
-        if data is None:
-            raise HTTPException(401, f"{e}")
-
     except Exception as e:
         raise HTTPException(401, f"{e}")
-
-    return Actor(user_id=data["user_id"], org_id=data["org_id"], session=session)
+    return Actor(user_uuid=jwt["user_uuid"], org_uuid=jwt["org_uuid"], session=session)

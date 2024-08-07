@@ -24,14 +24,13 @@ class AuthAPI:
     def get_password_info(session: Session, account: str = "") -> dict | None:
         """根据账号获取密码以及账号状态"""
         stmt = select(
-            User.user_id,
             User.user_uuid,
             User.status,
             UserAuth.auth_value
         ).join_from(
-            User, UserAuth, User.user_id == UserAuth.user_id
+            User, UserAuth, User.user_uuid == UserAuth.user_uuid
         ).where(and_(
-            User.deleted == False,
+            User.is_deleted == False,
             User.account == account,
             UserAuth.auth_type == UserAuthType.PASSWORD.value,
             UserAuth.auth_identify == ""
@@ -40,41 +39,22 @@ class AuthAPI:
         return ORM.one(session, stmt)
 
     @staticmethod
-    def get_user_orgs(session: Session, user_id: int):
+    def get_user_orgs(session: Session, user_uuid: int):
         """获取用户所属的组织信息"""
         statement = select(
             Org.org_uuid,
             Org.org_name,
             Org.is_admin,
-            Org.owner_id
+            Org.owner_uuid
         ).join_from(
-            Org, OrgUser, Org.org_id == OrgUser.org_id
+            Org, OrgUser, Org.org_uuid == OrgUser.org_uuid
         ).where(and_(
-            Org.deleted == False,
+            Org.is_deleted == False,
             OrgUser.status == OrgUserStatus.ENABLE.value,
-            OrgUser.user_id == user_id
+            OrgUser.user_uuid == user_uuid
         ))
 
         return ORM.all(session, statement)
-
-    @staticmethod
-    def get_id_from_uuid(session: Session, user_uuid: str, org_uuid: str) -> dict | None:
-        """获取用户ID和组织ID"""
-        stmt = select(
-            OrgUser.user_id,
-            OrgUser.org_id
-        ).join_from(
-            OrgUser, User, OrgUser.user_id == User.user_id
-        ).join(
-            Org, OrgUser.org_id == Org.org_id
-        ).where(and_(
-            User.deleted == False,
-            Org.deleted == False,
-            User.user_uuid == user_uuid,
-            Org.org_uuid == org_uuid
-        ))
-
-        return ORM.one(session, stmt)
 
     @staticmethod
     def get_org_user_info(actor: Actor) -> dict | None:
@@ -82,8 +62,8 @@ class AuthAPI:
             OrgUser.user_name,
             OrgUser.avatar,
         ).where(
-            OrgUser.user_id == actor.user_id,
-            OrgUser.org_id == actor.org_id
+            OrgUser.user_uuid == actor.user_uuid,
+            OrgUser.org_uuid == actor.org_uuid
         )
 
         return ORM.one(actor.session, stmt)

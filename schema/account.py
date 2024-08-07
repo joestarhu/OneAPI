@@ -41,34 +41,33 @@ class AccountAPI:
             (status is not None, User.status == status),
         ] if condition]
 
-        statement = select(
+        stmt = select(
             User.user_uuid,
             User.account,
             User.nick_name,
             User.phone,
             User.status,
-            User.create_dt,
-            User.update_dt
-        ).where(and_(User.deleted == False, *expressions))
+            User.created_at,
+            User.updated_at
+        ).where(and_(User.is_deleted == False, *expressions))
 
-        return ORM.pagination(actor.session, statement, pagination.page_idx,
-                              pagination.page_size, [User.create_dt.desc()], format_rules)
+        return ORM.pagination(actor.session, stmt, pagination.page_idx,
+                              pagination.page_size, [User.created_at.desc()], format_rules)
 
     @staticmethod
     def get_account_detail(actor: Actor, user_uuid: str):
         """获取账号详情"""
-        statement = select(
-            User.user_id,
+        stmt = select(
             User.account,
             User.phone,
             User.nick_name,
             User.status
         ).where(and_(
-            User.deleted == False,
+            User.is_deleted == False,
             User.user_uuid == user_uuid
         ))
 
-        return ORM.one(actor.session, statement, format_rules)
+        return ORM.one(actor.session, stmt, format_rules)
 
     @staticmethod
     def check_account_unique(session: Session, account: str = "", phone_hash: str = "", except_uuid: str = None) -> APIErrors | None:
@@ -95,17 +94,17 @@ class AccountAPI:
             if result := AccountAPI.check_account_unique(session, data.account, phone_enc):
                 return result
 
-            user = User(**data.model_dump(exclude=[
-                        "phone"]), **actor.create_info, phone=phone_enc, user_uuid=generate_uuid_str())
+            user = User(user_uuid=generate_uuid_str(),
+                        phone=phone_enc,
+                        **data.model_dump(exclude=["phone"])
+                        )
             session.add(user)
-            session.flush()
 
-            user_auth = UserAuth(user_id=user.user_id,
+            user_auth = UserAuth(user_uuid=user.user_uuid,
                                  auth_type=UserAuthType.PASSWORD.value,
                                  auth_identify="",
                                  auth_value=hash_api.hash(
-                                     settings.default_passwd),
-                                 **actor.create_info
+                                     settings.default_passwd)
                                  )
             session.add(user_auth)
 
@@ -125,8 +124,7 @@ class AccountAPI:
                 User.user_uuid == data.user_uuid
             ).values(
                 nick_name=data.nick_name,
-                status=data.status,
-                **actor.update_info
+                status=data.status
             )
 
             session.execute(stmt)
@@ -146,10 +144,10 @@ class AccountAPI:
             delete_uuid = data.user_uuid
 
             for statement in [
-                update(User).where(User.user_uuid == delete_uuid).values(
-                    deleted=True, account=delete_uuid, phone=delete_uuid),
-                delete(UserAuth).where(UserAuth.user_id == User.user_id).where(
-                    User.user_uuid == delete_uuid)
+                update(User).where(User.user_uuid == delete_uuid).values(is_deleted=True,
+                                                                         account=delete_uuid,
+                                                                         phone=delete_uuid),
+                delete(UserAuth).where(UserAuth.user_uuid == delete_uuid)
             ]:
                 session.execute(statement)
 

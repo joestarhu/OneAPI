@@ -21,16 +21,16 @@ async def password_login(data: PasswordLogin, session=Depends(get_session)) -> R
         if user is None or hash_api.verify(password, user["auth_value"]) == False:
             return Rsp(**APIErrors.WRONG_ACCOUNT_PASSWD.value)
 
-        if user["status"] != UserStatus.ENABLE:
+        if user["status"] != UserStatus.ENABLE.value:
             return Rsp(**APIErrors.ACCOUNT_STATUS_DISABLE.value)
 
         jwt = Jwt(user_uuid=user["user_uuid"])
 
-        org = AuthAPI.get_user_orgs(session, user["user_id"])
+        org = AuthAPI.get_user_orgs(session, user["user_uuid"])
         if org and len(org) == 1:
             jwt.org_uuid = org[0]["org_uuid"]
             jwt.org_is_admin = org[0]["is_admin"] == True
-            jwt.org_owner = org[0]["owner_id"] == user["user_id"]
+            jwt.org_owner = org[0]["owner_uuid"] == user["user_uuid"]
 
         payload = jwt_api.encode(**asdict(jwt))
     except Exception as e:

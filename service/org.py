@@ -14,8 +14,7 @@ async def get_org_list(actor=Depends(get_actor_info),
                        status: int = Query(default=None, description="组织状态")
                        ):
     try:
-        data = OrgAPI.get_org_list(
-            actor.session, org_name, status, pagination.page_idx, pagination.page_size)
+        data = OrgAPI.get_org_list(actor, pagination, org_name, status)
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)
@@ -23,10 +22,10 @@ async def get_org_list(actor=Depends(get_actor_info),
 
 @api.get("/detail")
 async def get_org_detail(actor=Depends(get_actor_info),
-                         org_id: int = Query(description="组织ID")
+                         org_uuid: str = Query(description="组织UUID")
                          ) -> Rsp:
     try:
-        data = OrgAPI.get_org_detail(actor.session, org_id)
+        data = OrgAPI.get_org_detail(actor, org_uuid)
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)
