@@ -8,7 +8,7 @@ from .base import get_actor_info, get_pagination, Rsp
 api = APIRouter(prefix="/account")
 
 
-@api.get("/list")
+@api.get("/list", summary="获取账号列表信息")
 async def get_list(phone: str = Query(default="", description="手机号"),
                    nick_name: str = Query(default="", description="用户昵称"),
                    status: int = Query(default=None, description="用户状态"),
@@ -24,7 +24,7 @@ async def get_list(phone: str = Query(default="", description="手机号"),
     return Rsp(data=data)
 
 
-@api.get("/detail")
+@api.get("/detail", summary="获取账号详细信息")
 async def get_detail(user_uuid: str = Query(description="用户UUID"),
                      actor=Depends(get_actor_info)
                      ) -> Rsp:
@@ -35,7 +35,7 @@ async def get_detail(user_uuid: str = Query(description="用户UUID"),
     return Rsp(data=data)
 
 
-@api.post("/create")
+@api.post("/create", summary="创建账号")
 async def create(data: AccountCreate,
                  actor=Depends(get_actor_info)
                  ) -> Rsp:
@@ -48,7 +48,7 @@ async def create(data: AccountCreate,
     return Rsp(**result.value)
 
 
-@api.post("/update")
+@api.post("/update", summary="修改账号")
 async def update(data: AccountUpdate,
                  actor=Depends(get_actor_info)
                  ) -> Rsp:
@@ -61,7 +61,7 @@ async def update(data: AccountUpdate,
     return Rsp(**result.value)
 
 
-@api.post("/delete")
+@api.post("/delete", summary="删除账号")
 async def delete(data: AccountDelete,
                  actor=Depends(get_actor_info)
                  ) -> Rsp:

@@ -45,3 +45,18 @@ class APIErrors:
         code=1006,
         message="Superadmin can't edit or delete"
     )
+
+    ORG_NAME_ALREADY_EXISTS = ErrInfo(
+        code=1007,
+        message="Organization name already exists"
+    )
+
+    SUPERORG_DINIED = ErrInfo(
+        code=1008,
+        message="Admin Organization can't edit or delete"
+    )
+
+    OWNER_NOT_EXISTS = ErrInfo(
+        code=1009,
+        message="Organization Owner is not exists"
+    )
