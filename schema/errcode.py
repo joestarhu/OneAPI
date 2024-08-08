@@ -60,3 +60,8 @@ class APIErrors:
         code=1009,
         message="Organization Owner is not exists"
     )
+
+    ORG_USER_DINIED = ErrInfo(
+        code=1010,
+        message=""
+    )

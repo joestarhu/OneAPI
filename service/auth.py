@@ -67,22 +67,13 @@ async def set_user_org(data: SelectOrg,
                        actor=Depends(get_actor_info)
                        ) -> Rsp:
     try:
-        ...
+        if (result := AuthAPI.check_user_org(actor, data.org_uuid)) != APIErrors.NO_ERROR:
+            return Rsp(**result.value)
+
+        # 更新JWT
+        jwt = Jwt(user_uuid=actor.user_uuid, org_uuid=data.org_uuid)
+        payload = jwt_api.encode(**asdict(jwt))
     except Exception as e:
         raise HTTPException(500, f"{e}")
-    return Rsp()
 
-# async def set_user_org(data: SelectOrg, actor=Depends(get_actor_info)) -> Rsp:
-#     """登录用户选择对应的组织"""
-#     try:
-#         user_id, org_id = actor.user_id, data.org_id
-#         # 判断用户选中的组织是否为有效的组织
-#         result = AuthAPI.set_user_org(
-#             actor.session, user_id, org_id)
-#         if result != APIErrors.NO_ERROR:
-#             return Rsp(**result.value)
-#         jwt = JWT(user_id=user_id, org_id=org_id)
-#         payload = jwt_api.encode(**jwt.model_dump())
-#     except Exception as e:
-#         raise HTTPException(500, f"{e}")
-#     return Rsp(data={"jwt": payload})
+    return Rsp(data={"jwt": payload})

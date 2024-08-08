@@ -44,7 +44,7 @@ class OrgAPI:
                               pagination.page_size, [Org.created_at.desc()])
 
     @staticmethod
-    def get_org_detail(actor: Actor, org_uuid: int):
+    def get_org_detail(actor: Actor, org_uuid: int) -> dict | None:
         stmt = select(
             Org.org_uuid,
             Org.org_name,

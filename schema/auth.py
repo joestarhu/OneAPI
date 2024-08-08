@@ -41,7 +41,7 @@ class AuthAPI:
     @staticmethod
     def get_user_orgs(actor: Actor):
         """获取用户所属的组织信息"""
-        statement = select(
+        stmt = select(
             Org.org_uuid,
             Org.org_name,
             Org.is_admin,
@@ -54,7 +54,7 @@ class AuthAPI:
             OrgUser.user_uuid == actor.user_uuid
         ))
 
-        return ORM.all(actor.session, statement)
+        return ORM.all(actor.session, stmt)
 
     @staticmethod
     def get_org_user_info(actor: Actor) -> dict | None:
@@ -69,21 +69,21 @@ class AuthAPI:
 
         return ORM.one(actor.session, stmt)
 
-        #     @staticmethod
-        #     def set_user_org(session: Session, user_id: int, org_id: int) -> APIErrors:
-        #         """设置用户登录的组织信息"""
-        #         stmt = select(
-        #             OrgUser.id
-        #         ).join_from(
-        #             Org, OrgUser, Org.org_id == OrgUser.org_id
-        #         ).where(and_(
-        #             Org.deleted == False,
-        #             OrgUser.status == OrgUserStatus.ENABLE.value,
-        #             OrgUser.org_id == org_id,
-        #             OrgUser.user_id == user_id
-        #         ))
+    @staticmethod
+    def check_user_org(actor: Actor, org_uuid: str) -> APIErrors:
+        """用户登录组织是否合法"""
+        stmt = select(
+            Org.id
+        ).join_from(
+            OrgUser, Org, OrgUser.org_uuid == Org.org_uuid, isouter=True
+        ).where(and_(
+            Org.is_deleted == False,
+            OrgUser.status == OrgUserStatus.ENABLE.value,
+            OrgUser.user_uuid == actor.user_uuid,
+            OrgUser.org_uuid == org_uuid
+        ))
 
-        #         if ORM.counts(session, stmt) != 1:
-        #             return APIErrors.WRONG_ORG_ACCOUNT
+        if ORM.one(actor.session, stmt) == 0:
+            return APIErrors.ORG_USER_DINIED
 
-        #         return APIErrors.NO_ERROR
+        return APIErrors.NO_ERROR
