@@ -6,7 +6,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from api.config.settings import settings
 from api.config.security import jwt_api
-from api.schema.auth import AuthAPI
 from api.schema.base import Pagination, Actor
 
 

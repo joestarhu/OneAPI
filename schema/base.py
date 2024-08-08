@@ -40,4 +40,4 @@ class Actor:
     """操作信息"""
     session: Session
     user_uuid: str
-    org_uuid: str
+    org_uuid: str | None = None

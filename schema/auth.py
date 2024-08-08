@@ -16,7 +16,7 @@ class PasswordLogin(BaseModel):
 
 
 class SelectOrg(BaseModel):
-    org_id: int = Field(description="组织ID")
+    org_uuid: str = Field(description="组织UUID")
 
 
 class AuthAPI:
@@ -39,7 +39,7 @@ class AuthAPI:
         return ORM.one(session, stmt)
 
     @staticmethod
-    def get_user_orgs(session: Session, user_uuid: int):
+    def get_user_orgs(actor: Actor):
         """获取用户所属的组织信息"""
         statement = select(
             Org.org_uuid,
@@ -51,13 +51,14 @@ class AuthAPI:
         ).where(and_(
             Org.is_deleted == False,
             OrgUser.status == OrgUserStatus.ENABLE.value,
-            OrgUser.user_uuid == user_uuid
+            OrgUser.user_uuid == actor.user_uuid
         ))
 
-        return ORM.all(session, statement)
+        return ORM.all(actor.session, statement)
 
     @staticmethod
     def get_org_user_info(actor: Actor) -> dict | None:
+        """获取组织登录用户的相关信息"""
         stmt = select(
             OrgUser.user_name,
             OrgUser.avatar,

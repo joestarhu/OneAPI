@@ -159,7 +159,7 @@ class AccountAPI:
             session.rollback()
             raise e
 
-            return APIErrors.NO_ERROR
+        return APIErrors.NO_ERROR
 
     @staticmethod
     def delete_account(actor: Actor, data: AccountDelete) -> APIErrors:

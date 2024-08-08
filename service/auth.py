@@ -1,9 +1,9 @@
 from dataclasses import asdict
 from fastapi import APIRouter, Depends, HTTPException
 from api.config.security import client_aes_api, hash_api, jwt_api
-from api.schema.auth import AuthAPI, PasswordLogin
+from api.schema.auth import AuthAPI, PasswordLogin, SelectOrg
 from api.schema.errcode import APIErrors
-from api.schema.base import Jwt
+from api.schema.base import Jwt, Actor
 from api.model.user import UserStatus
 from .base import get_session, get_actor_info, Rsp
 
@@ -12,7 +12,9 @@ api = APIRouter(prefix="/auth")
 
 
 @api.post("/password", summary="账号密码登录")
-async def password_login(data: PasswordLogin, session=Depends(get_session)) -> Rsp:
+async def password_login(data: PasswordLogin,
+                         session=Depends(get_session)
+                         ) -> Rsp:
     try:
         password = client_aes_api.decrypt(data.password_enc)
 
@@ -26,7 +28,8 @@ async def password_login(data: PasswordLogin, session=Depends(get_session)) -> R
 
         jwt = Jwt(user_uuid=user["user_uuid"])
 
-        org = AuthAPI.get_user_orgs(session, user["user_uuid"])
+        org = AuthAPI.get_user_orgs(
+            Actor(session=session, user_uuid=user["user_uuid"]))
         if org and len(org) == 1:
             jwt.org_uuid = org[0]["org_uuid"]
             jwt.org_is_admin = org[0]["is_admin"] == True
@@ -49,15 +52,26 @@ async def get_org_user_info(actor=Depends(get_actor_info)
     return Rsp(data=data)
 
 
-# @api.get("/org")
-# async def get_user_orgs(actor=Depends(get_actor_info)) -> Rsp:
-#     """获取用户所属的有效组织信息"""
-#     try:
-#         data = AuthAPI.get_user_orgs(actor.session, actor.user_id)
-#     except Exception as e:
-#         raise HTTPException(500, f"{e}")
-#     return Rsp(data=data)
-# @api.post("/org")
+@api.get("/org", summary="获取登录用户组织信息")
+async def get_user_orgs(actor=Depends(get_actor_info)
+                        ) -> Rsp:
+    try:
+        data = AuthAPI.get_user_orgs(actor)
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp(data=data)
+
+
+@api.post("/org", summary="选择登录组织")
+async def set_user_org(data: SelectOrg,
+                       actor=Depends(get_actor_info)
+                       ) -> Rsp:
+    try:
+        ...
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp()
+
 # async def set_user_org(data: SelectOrg, actor=Depends(get_actor_info)) -> Rsp:
 #     """登录用户选择对应的组织"""
 #     try:
