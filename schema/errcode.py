@@ -13,55 +13,46 @@ class ErrInfo:
 
 @dataclass
 class APIErrors:
-    NO_ERROR = ErrInfo(code=0, message="Succeed")
+    NO_ERROR = ErrInfo(code=0, message="成功")
 
-    # 统一用户中心的错误代码
-    WRONG_ACCOUNT_PASSWD = ErrInfo(
+    # 登录业务
+    LOGIN_WRONG_ACCOUNT_PASSWD = ErrInfo(
         code=1001,
-        message="Wrong Account or Password"
+        message="抱歉,您输入的账号或密码不正确"
     )
-
-    ACCOUNT_STATUS_DISABLE = ErrInfo(
+    LOGIN_ACCOUNT_STATUS_DISABLE = ErrInfo(
         code=1002,
-        message="Account Disable"
+        message="抱歉,您的账号处于停用状态"
     )
-
-    WRONG_ORG_ACCOUNT = ErrInfo(
+    LOGIN_ORG_DINED = ErrInfo(
         code=1003,
-        message="Organization disable or Organization User disable"
+        message="抱歉,您无权进入该组织"
     )
 
-    PHONE_ALREADY_EXISTS = ErrInfo(
-        code=1004,
-        message="Phone already exists"
+    # 账号业务
+    USER_ACCOUNT_ALREADY_EXISTS = ErrInfo(
+        code=2001,
+        message="账号已存在"
+    )
+    USER_PHONE_ALREADY_EXISTS = ErrInfo(
+        code=2002,
+        message="手机号已存在"
+    )
+    USER_ADMIN_CTRL_DINED = ErrInfo(
+        code=2003,
+        message="超级管理员账号不允许修改或删除"
     )
 
-    ACCOUNT_ALREADY_EXISTS = ErrInfo(
-        code=1005,
-        message="Account already exists"
-    )
-
-    SUPERADMIN_DINIED = ErrInfo(
-        code=1006,
-        message="Superadmin can't edit or delete"
-    )
-
+    # 组织业务
     ORG_NAME_ALREADY_EXISTS = ErrInfo(
-        code=1007,
-        message="Organization name already exists"
+        code=3001,
+        message="组织名称已存在"
     )
-
-    SUPERORG_DINIED = ErrInfo(
-        code=1008,
-        message="Admin Organization can't edit or delete"
+    ORG_ADMIN_CTRL_DINED = ErrInfo(
+        code=3002,
+        message="平台组织不允许修改或删除"
     )
-
-    OWNER_NOT_EXISTS = ErrInfo(
-        code=1009,
-        message="Organization Owner is not exists"
-    )
-
-    ORG_USER_DINIED = ErrInfo(
-        code=1010,
-        message=""
+    ORG_OWNER_NOT_AVAIABLE = ErrInfo(
+        code=3003,
+        message="无效组织所有者,账号不存在或状态异常"
     )

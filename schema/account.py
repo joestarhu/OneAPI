@@ -77,9 +77,9 @@ class AccountAPI:
         except_expression = None if except_uuid is None else User.user_uuid != except_uuid
 
         orm_check_rules = [
-            ORMCheckRule(APIErrors.PHONE_ALREADY_EXISTS,
+            ORMCheckRule(APIErrors.USER_PHONE_ALREADY_EXISTS,
                          User.phone == phone_hash),
-            ORMCheckRule(APIErrors.ACCOUNT_ALREADY_EXISTS,
+            ORMCheckRule(APIErrors.USER_ACCOUNT_ALREADY_EXISTS,
                          User.account == account),
         ]
 
@@ -100,10 +100,7 @@ class AccountAPI:
             User.user_uuid == user_uuid
         ))
 
-        if ORM.counts(session, stmt) > 0:
-            result = True
-
-        return result
+        return True if ORM.counts(session, stmt) > 0 else False
 
     @staticmethod
     def create_account(actor: Actor, data: AccountCreate) -> APIErrors:
@@ -144,7 +141,7 @@ class AccountAPI:
             session = actor.session
 
             if AccountAPI.check_superadmin(session, data.user_uuid) == True:
-                return APIErrors.SUPERADMIN_DINIED
+                return APIErrors.USER_ADMIN_CTRL_DINED
 
             stmt = update(User).where(
                 User.user_uuid == data.user_uuid
@@ -170,7 +167,7 @@ class AccountAPI:
             delete_uuid = data.user_uuid
 
             if AccountAPI.check_superadmin(session, delete_uuid) == True:
-                return APIErrors.SUPERADMIN_DINIED
+                return APIErrors.USER_ADMIN_CTRL_DINED
 
             for statement in [
                 update(User).where(User.user_uuid == delete_uuid).values(is_deleted=True,
