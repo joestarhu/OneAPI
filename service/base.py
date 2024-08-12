@@ -55,17 +55,3 @@ def get_actor_info(actor=Depends(get_login_user)) -> Actor:
     except Exception as e:
         raise HTTPException(401, f"{e}")
     return actor
-
-
-# def get_actor_info(token=Depends(auth_bear), session=Depends(get_session)) -> Actor:
-#     try:
-#         jwt = jwt_api.decode(token)
-#         user_uuid = jwt["user_uuid"]
-#         org_uuid = jwt["org_uuid"]
-
-#         if AuthAPI.check_login_avaiable(session, user_uuid, org_uuid) == False:
-#             raise HTTPException(401, "无效的用户或组织")
-
-#     except Exception as e:
-#         raise HTTPException(401, f"{e}")
-#     return Actor(user_uuid=user_uuid, org_uuid=org_uuid, session=session)

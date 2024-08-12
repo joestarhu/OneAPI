@@ -65,6 +65,16 @@ async def get_user_orgs(actor=Depends(get_login_user)) -> Rsp:
     return Rsp(data=data)
 
 
+@api.get("/org_name", summary="获取已登录的组织名称")
+async def get_org_name(actor=Depends(get_actor_info)) -> Rsp:
+    try:
+        data = AuthAPI.get_login_org_name(actor)
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+
+    return Rsp(data=data)
+
+
 @api.post("/org", summary="已登录用户选择登录组织")
 async def set_user_org(data: ChooseOrg, actor=Depends(get_login_user)) -> Rsp:
     try:

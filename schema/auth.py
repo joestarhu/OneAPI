@@ -106,3 +106,14 @@ class AuthAPI:
         ))
 
         return ORM.one(actor.session, stmt)
+
+    @staticmethod
+    def get_login_org_name(actor: Actor) -> dict | None:
+        stmt = select(
+            Org.org_name
+        ).where(and_(
+            Org.is_deleted == False,
+            Org.org_uuid == actor.org_uuid
+        ))
+
+        return ORM.one(actor.session, stmt)
