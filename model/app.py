@@ -5,12 +5,16 @@ from .base import ModelBase
 
 
 class AppUriType(Enum):
+    # 内部路由
     ROUTER = 0
+    # 外部链接
     HREF = 1
 
 
 class AppServiceType(Enum):
+    # 按钮级
     BUTTON = 0
+    # 菜单级
     MENU = 1
 
 
@@ -25,7 +29,7 @@ class App(ModelBase):
         {"comment": "应用信息"}
     )
 
-    name: M[str] = mc(String(32), default="", comment="应用名")
+    name: M[str] = mc(String(32), comment="应用名")
     status: M[bool] = mc(Boolean, default=True, comment="应用状态")
     desc: M[str] = mc(String(128), default="", comment="应用描述")
     icon: M[str] = mc(String(128), default="", comment="应用icon")

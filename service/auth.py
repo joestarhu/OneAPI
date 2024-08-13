@@ -29,7 +29,8 @@ async def password_login(data: PasswordLogin, session=Depends(get_session)) -> R
 
         # 获取用户组织信息
         org = AuthAPI.get_user_orgs(
-            Actor(session=session, user_uuid=user["user_uuid"]))
+            Actor(session=session, user_uuid=user["user_uuid"])
+        )
 
         # 构建JWT
         jwt = Jwt(user_uuid=user["user_uuid"])

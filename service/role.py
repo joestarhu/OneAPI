@@ -32,6 +32,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
+# @api.get("/")
 # @api.post("/token")
 # async def login_for_access_token(
 #     form_data: OAuth2PasswordRequestForm = Depends(),

@@ -25,7 +25,7 @@ class Jwt:
     org_owner: bool = False
 
     # 权限范围
-    scope: list[str] | None = None
+    scopes: list[str] | None = None
 
 
 @dataclass
@@ -41,3 +41,7 @@ class Actor:
     session: Session
     user_uuid: str
     org_uuid: str | None = None
+    org_is_admin: bool = False
+
+    org_owner: bool = False
+    scopes: list[str] | None = None
