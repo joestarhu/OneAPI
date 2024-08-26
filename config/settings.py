@@ -22,7 +22,7 @@ class APISettings(BaseSettings):
     # CORS配置
     allow_origins: list[str] = ["*"]
     allow_credentials: bool = True
-    allow_methods: list[str] = ["*"]
+    allow_methods: list[str] = ["POST", "GET"]
     allow_headers: list[str] = ["*"]
 
     # 安全相关
@@ -39,23 +39,21 @@ class APISettings(BaseSettings):
 
     @property
     def fastapi_kwargs(self) -> dict:
-        return dict(
-            docs_url=self.docs_url,
-            redoc_url=self.redoc_url,
-            title=self.title,
-            version=self.version,
-            swagger_js_url=self.swagger_js_url,
-            swagger_css_url=self.swagger_css_url
-        )
+        return dict(title=self.title,
+                    version=self.version,
+                    docs_url=self.docs_url,
+                    redoc_url=self.redoc_url,
+                    swagger_js_url=self.swagger_js_url,
+                    swagger_css_url=self.swagger_css_url
+                    )
 
     @property
     def fastapi_cors_kwargs(self) -> dict:
-        return dict(
-            allow_origins=self.allow_origins,
-            allow_credentials=self.allow_credentials,
-            allow_methods=self.allow_methods,
-            allow_headers=self.allow_headers
-        )
+        return dict(allow_origins=self.allow_origins,
+                    allow_credentials=self.allow_credentials,
+                    allow_methods=self.allow_methods,
+                    allow_headers=self.allow_headers
+                    )
 
 
 settings = APISettings()
