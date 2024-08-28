@@ -87,8 +87,6 @@ class AccountAPI:
 
     @staticmethod
     def check_superadmin(session: Session, user_uuid: str) -> bool:
-        result = False
-
         stmt = select(
             Org.is_admin
         ).join_from(

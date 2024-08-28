@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import Boolean, Integer, SmallInteger, String, UniqueConstraint
+from sqlalchemy import Boolean, SmallInteger, String, BigInteger, UniqueConstraint
 from .base import ModelBase, M, mc
 
 
@@ -41,15 +41,15 @@ class Org(ModelBase):
                             comment="组织所有者UUID"
                             )
 
-    remark: M[str] = mc(String(256),
-                        default="",
-                        comment="组织备注信息"
-                        )
+    org_remark: M[str] = mc(String(256),
+                            default="",
+                            comment="组织备注信息"
+                            )
 
-    status: M[int] = mc(SmallInteger,
-                        default=OrgStatus.ENABLE.value,
-                        comment="组织状态"
-                        )
+    org_status: M[int] = mc(SmallInteger,
+                            default=OrgStatus.ENABLE.value,
+                            comment="组织状态"
+                            )
 
     is_deleted: M[bool] = mc(Boolean,
                              default=False,
@@ -91,14 +91,35 @@ class OrgUser(ModelBase):
                                  )
 
 
-# class OrgApp(ModelBase):
-#     __tablename__ = "t_org_app"
-#     __table_args__ = (
-#         UniqueConstraint("org_uuid", "app_id", name="uni_org_user"),
-#         {"comment": "组织应用信息"}
-#     )
+class OrgUserRole(ModelBase):
+    __tablename__ = "t_org_user_role"
+    __table_args__ = (
+        {"comment": "组织用户角色信息"}
+    )
 
-#     org_uuid: M[int] = mc(String(32), comment="组织UUID")
+    org_uuid: M[str] = mc(String(32),
+                          default="",
+                          comment="组织UUID"
+                          )
 
-#     status: M[int] = mc(
-#         Integer, default=OrgAppStatus.ENABLE.value, comment="组织应用状态")
+    user_uuid: M[str] = mc(String(32),
+                           default="",
+                           comment="用户UUID"
+                           )
+
+    role_id: M[int] = mc(BigInteger,
+                         default=0,
+                         comment="角色ID"
+                         )
+
+
+class OrgApp(ModelBase):
+    __tablename__ = "t_org_app"
+    __table_args__ = (
+        {"comment": "组织应用信息"}
+    )
+
+    org_uuid: M[str] = mc(String(32),
+                          default="",
+                          comment="组织UUID"
+                          )

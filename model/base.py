@@ -4,7 +4,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped as M, mapped_column as mc
 
 
 class ModelBase(DeclarativeBase):
-    id: M[int] = mc(BigInteger, primary_key=True, comment="ID")
+    id: M[int] = mc(BigInteger,
+                    primary_key=True,
+                    autoincrement=True,
+                    comment="ID"
+                    )
 
     created_at: M[datetime] = mc(TIMESTAMP,
                                  default=func.current_timestamp(),

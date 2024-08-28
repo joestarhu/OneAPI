@@ -47,10 +47,10 @@ class User(ModelBase):
                             comment="用户头像url"
                             )
 
-    status: M[int] = mc(SmallInteger,
-                        default=UserStatus.ENABLE.value,
-                        comment="用户状态;0:停用,1:启用"
-                        )
+    user_status: M[int] = mc(SmallInteger,
+                             default=UserStatus.ENABLE.value,
+                             comment="用户状态;0:停用,1:启用"
+                             )
 
     is_deleted: M[bool] = mc(Boolean,
                              default=False,

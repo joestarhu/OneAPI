@@ -1,15 +1,5 @@
-from typing import Any
-from datetime import datetime
 from dataclasses import dataclass
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
-
-
-class Rsp(BaseModel):
-    """Restful API返回结果"""
-    code: int = 0
-    message: str = "Succeed"
-    data: Any | None = None
 
 
 @dataclass
@@ -37,11 +27,27 @@ class Pagination:
 
 @dataclass
 class Actor:
-    """操作信息"""
+    """操作用户信息"""
+    # 数据库会话
     session: Session
-    user_uuid: str
-    org_uuid: str | None = None
-    org_is_admin: bool = False
 
-    org_owner: bool = False
-    scopes: list[str] | None = None
+    # 操作用户的UUID
+    user_uuid: str
+
+    # 操作用户选择的组织UUID
+    org_uuid: str | None = None
+
+    # 操作用户是否为组织所有者,即组织的超级管理员
+    is_org_owner: bool = False
+
+
+# @dataclass
+# class Actor:
+#     """操作信息"""
+#     session: Session
+#     user_uuid: str
+#     org_uuid: str | None = None
+#     org_is_admin: bool = False
+
+#     org_owner: bool = False
+#     scopes: list[str] | None = None

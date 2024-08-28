@@ -1,7 +1,6 @@
 from enum import Enum
 from sqlalchemy import SmallInteger, String, Boolean, BigInteger, UniqueConstraint
-from sqlalchemy.orm import Mapped as M, mapped_column as mc
-from .base import ModelBase
+from .base import ModelBase, M, mc
 
 
 class AppUriType(Enum):
@@ -29,23 +28,64 @@ class App(ModelBase):
         {"comment": "应用信息"}
     )
 
-    name: M[str] = mc(String(32), comment="应用名")
-    status: M[bool] = mc(Boolean, default=True, comment="应用状态")
-    desc: M[str] = mc(String(128), default="", comment="应用描述")
-    icon: M[str] = mc(String(128), default="", comment="应用icon")
-    uri_type: M[int] = mc(
-        SmallInteger, default=AppUriType.ROUTER.value, comment="应用链接类型")
-    uri_value: M[str] = mc(String(128), default="", comment="应用链接URI")
+    app_name: M[str] = mc(String(64),
+                          unique=True,
+                          default="",
+                          comment="应用名称"
+                          )
+
+    app_remark: M[str] = mc(String(256),
+                            default="",
+                            comment="应用备注"
+                            )
+
+    app_status: M[int] = mc(SmallInteger,
+                            default=AppStatus.ENABLE.value,
+                            comment="应用状态"
+                            )
+
+    is_deleted: M[bool] = mc(Boolean,
+                             default=False,
+                             comment="逻辑删除标识"
+                             )
 
 
-class AppService:
+class AppService(ModelBase):
     __tablename__ = "t_app_service"
-    __table_args__ = (
-        UniqueConstraint("app_id", "service_name", name="uni_app_service"),
-        {"comment": "应用服务信息"}
+    __table__args__ = (
+        UniqueConstraint("app_id", "service_tag",
+                         name="uni_app_service"),
+        {"comment": "应用鉴权服务"}
     )
 
-    app_id: M[int] = mc(BigInteger, comment="应用ID")
-    service_type: M[int] = mc(
-        SmallInteger, default=AppServiceType.BUTTON.value, comment="服务类型")
-    service_name: M[str] = mc(String(64), default="", comment="服务名称")
+    app_id: M[int] = mc(BigInteger,
+                        default=0,
+                        comment="应用ID"
+                        )
+
+    service_name: M[str] = mc(String(64),
+                              default="",
+                              comment="应用服务名称"
+                              )
+
+    service_tag: M[str] = mc(String(128),
+                             default="",
+                             comment="应用服务标识"
+                             )
+
+
+class AppRole(ModelBase):
+    __tablename__ = "t_app_role"
+    __table__args__ = (
+        {"comment": "应用角色信息"}
+    )
+
+    app_id: M[int] = mc(BigInteger,
+                        default=0,
+                        comment="应用ID"
+                        )
+
+    role_id: M[int] = mc(BigInteger,
+                         default=0,
+                         comment="角色ID"
+                         )
