@@ -1,5 +1,5 @@
 from enum import Enum
-from sqlalchemy import String, SmallInteger, BigInteger, Boolean
+from sqlalchemy import String, SmallInteger, Boolean
 from .base import ModelBase, M, mc
 
 

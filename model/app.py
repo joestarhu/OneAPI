@@ -3,18 +3,18 @@ from sqlalchemy import SmallInteger, String, Boolean, BigInteger, UniqueConstrai
 from .base import ModelBase, M, mc
 
 
-class AppUriType(Enum):
-    # 内部路由
-    ROUTER = 0
-    # 外部链接
-    HREF = 1
+class DataScopeDept(Enum):
+    # 本人
+    LOCAL = 0
+    # 所有
+    ALL = 99
 
 
-class AppServiceType(Enum):
-    # 按钮级
-    BUTTON = 0
-    # 菜单级
-    MENU = 1
+class DataScopeRegion(Enum):
+    # 本人
+    LOCAL = 0
+    # 所有
+    ALL = 99
 
 
 class AppStatus(Enum):
@@ -89,3 +89,23 @@ class AppRole(ModelBase):
                          default=0,
                          comment="角色ID"
                          )
+
+    org_uuid: M[str] = mc(String(32),
+                          default="",
+                          comment="角色所属组织"
+                          )
+
+    app_service_id: M[int] = mc(BigInteger,
+                                default=0,
+                                comment="应用鉴权服务ID"
+                                )
+
+    data_scope_dept: M[int] = mc(SmallInteger,
+                                 default=DataScopeDept.LOCAL.value,
+                                 comment="部门数据权限"
+                                 )
+
+    data_scope_region: M[int] = mc(SmallInteger,
+                                   default=DataScopeRegion.LOCAL.value,
+                                   comment="地区数据权限"
+                                   )

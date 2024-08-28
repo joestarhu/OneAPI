@@ -123,3 +123,13 @@ class OrgApp(ModelBase):
                           default="",
                           comment="组织UUID"
                           )
+
+    app_id: M[int] = mc(BigInteger,
+                        default=0,
+                        comment="应用ID"
+                        )
+
+    org_app_status: M[int] = mc(SmallInteger,
+                                default=OrgAppStatus.ENABLE.value,
+                                comment="组织应用状态"
+                                )
