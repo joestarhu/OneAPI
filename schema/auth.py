@@ -27,7 +27,7 @@ class AuthAPI:
         """获取账户的认证信息"""
         stmt = select(
             User.user_uuid,
-            User.status,
+            User.user_status,
             UserAuth.auth_value
         ).join_from(
             User, UserAuth, User.user_uuid == UserAuth.user_uuid
@@ -53,6 +53,7 @@ class AuthAPI:
             Org, OrgUser, Org.org_uuid == OrgUser.org_uuid
         ).where(and_(
             Org.is_deleted == False,
+            Org.org_status == OrgStatus.ENABLE.value,
             OrgUser.user_uuid == user_uuid
         ))
 
@@ -76,9 +77,7 @@ class AuthAPI:
         """获取已登录组织的名称"""
         stmt = select(
             Org.org_name
-        ).where(and_(
-            Org.org_uuid == actor.org_uuid
-        ))
+        ).where(Org.org_uuid == actor.org_uuid)
 
         return ORM.one(actor.session, stmt)
 

@@ -6,7 +6,7 @@ from api.model.org import Org, OrgUser, OrgStatus
 from api.model.user import User, UserStatus
 from api.config.security import generate_uuid_str
 from .account import AccountAPI
-from .base import Pagination, Actor, Rsp
+from .base import Pagination, Actor
 from .errcode import APIErrors
 
 
@@ -41,7 +41,7 @@ class OrgAPI:
             Org.org_uuid,
             Org.org_name,
             User.nick_name.label("owner_name"),
-            Org.status,
+            Org.org_status,
             Org.remark,
             Org.created_at,
             Org.updated_at,
@@ -63,7 +63,7 @@ class OrgAPI:
             User.user_uuid,
             User.nick_name.label("owner_name"),
             Org.remark,
-            Org.status
+            Org.org_status
         ).join_from(
             Org, User, Org.owner_uuid == User.user_uuid, isouter=True
         ).where(and_(
