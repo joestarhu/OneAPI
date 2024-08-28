@@ -52,7 +52,7 @@ class App(ModelBase):
 
 class AppService(ModelBase):
     __tablename__ = "t_app_service"
-    __table__args__ = (
+    __table_args__ = (
         UniqueConstraint("app_id", "service_tag",
                          name="uni_app_service"),
         {"comment": "应用鉴权服务"}
@@ -76,7 +76,7 @@ class AppService(ModelBase):
 
 class AppRole(ModelBase):
     __tablename__ = "t_app_role"
-    __table__args__ = (
+    __table_args__ = (
         {"comment": "应用角色信息"}
     )
 
