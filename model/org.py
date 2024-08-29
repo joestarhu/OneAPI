@@ -51,6 +51,11 @@ class Org(ModelBase):
                             comment="组织状态"
                             )
 
+    is_admin: M[bool] = mc(Boolean,
+                           default=False,
+                           comment="管理员级组织标识"
+                           )
+
     is_deleted: M[bool] = mc(Boolean,
                              default=False,
                              comment="逻辑删除标识"
