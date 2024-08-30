@@ -15,10 +15,10 @@ class Role(ModelBase):
     )
 
     role_name: M[str] = mc(String(64),
-                           unique=True,
                            default="",
                            comment="角色名"
                            )
+
     org_uuid: M[str] = mc(String(32),
                           default="",
                           comment="角色所属组织,空表示默认角色,可在所有组织下使用"
