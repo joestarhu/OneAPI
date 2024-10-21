@@ -25,7 +25,8 @@ def phone_encrypt(plain_text: str) -> str:
     Return:
         str:加密后的手机号
     """
-    length = len(plain_text)
+    if (length := len(plain_text)) == 0:
+        return ""
     end_pos = max(length-3, 0)
     return ",".join([server_aes_api.encrypt(plain_text[i:i+3]) for i in range(end_pos+1)])
 
@@ -40,6 +41,9 @@ def phone_decrypy(encrypted_text: str, mask: bool = True) -> str:
     Return:
         str:手机号明文
     """
+    if not encrypted_text:
+        return ""
+
     phone_array = [server_aes_api.decrypt(v)
                    for v in encrypted_text.split(",")]
 
