@@ -1,14 +1,14 @@
 from fastapi import APIRouter
-from . import auth, account, org, role
+from . import auth, account, org, role, app
 
 router = APIRouter()
-
 
 services_router = [
     (auth.api, ["认证服务"]),
     (account.api, ["账号服务"]),
     (org.api, ["组织服务"]),
-    # (role.api, ["角色服务"]),
+    (role.api, ["角色服务"]),
+    (app.api, ["应用服务"]),
 ]
 
 

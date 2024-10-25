@@ -1,19 +1,17 @@
-from typing import Any, Generator
+from typing import Generator, Any
 from pydantic import BaseModel
-from fastapi import Depends, HTTPException, Query
-from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-# from fastapi import Depends, Query, HTTPException, Security
+from fastapi import HTTPException, Query, Depends
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from api.config.settings import settings
 from api.config.security import jwt_api
 from api.schema.base import Pagination, Actor
-# from api.schema.auth import AuthAPI
 
 
 engine = create_engine(settings.db_rds,
                        echo=False, pool_recycle=settings.pool_recycle_seconds)
-LocalSession = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+local_session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 class Rsp(BaseModel):
@@ -25,7 +23,7 @@ class Rsp(BaseModel):
 
 def get_session() -> Generator:
     """获取数据库会话"""
-    with LocalSession() as session:
+    with local_session() as session:
         yield session
 
 
@@ -35,7 +33,7 @@ def get_pagination(page_idx: int = Query(default=1, description="页数"),
     return Pagination(page_idx=page_idx, page_size=page_size)
 
 
-auth_bear = OAuth2PasswordBearer("/token")
+auth_bear = OAuth2PasswordBearer("/auth/docs_login")
 
 
 def get_login_user(token=Depends(auth_bear),
@@ -46,11 +44,13 @@ def get_login_user(token=Depends(auth_bear),
         jwt = jwt_api.decode(token)
         user_uuid = jwt["user_uuid"]
         org_uuid = jwt["org_uuid"]
+        org_owner = jwt["org_owner"]
+        scopes = jwt["scopes"]
 
     except Exception as e:
         raise HTTPException(401, f"{e}")
 
-    return Actor(session=session, user_uuid=user_uuid, org_uuid=org_uuid)
+    return Actor(session=session, user_uuid=user_uuid, org_uuid=org_uuid, is_org_owner=org_owner)
 
 
 def get_actor_info(security_scope: SecurityScopes,
@@ -64,19 +64,6 @@ def get_actor_info(security_scope: SecurityScopes,
         raise HTTPException(500, f"{e}")
 
     return actor
-
-
-# def get_login_user(token=Depends(auth_bear), session=Depends(get_session)) -> Actor:
-#     try:
-#         jwt = jwt_api.decode(token)
-#         user_uuid = jwt["user_uuid"]
-#         org_uuid = jwt["org_uuid"]
-#         org_owner = jwt["org_owner"]
-#         scopes = jwt["scopes"]
-
-#     except Exception as e:
-#         raise HTTPException(401, f"{e}")
-#     return Actor(user_uuid=user_uuid, org_uuid=org_uuid, session=session, org_owner=org_owner, scopes=scopes)
 
 
 # def get_actor_info(security_scopes: SecurityScopes, actor=Depends(get_login_user)) -> Actor:

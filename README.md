@@ -10,8 +10,8 @@ erDiagram
 a["账号信息"]{
 	id bigint pk "账号ID"
 	account str(128) uk "用户账号,全局唯一"
-	phone str(256) uk "用户手机号,全局唯一"
 	nick_name str(128) "用户昵称"
+	phone str(256) "用户手机号,全局唯一"
 	status smallint "状态 0:停用,1:启用"
 	deleted smallint "逻辑删除标志 0:未删除 1:已删除"
 }

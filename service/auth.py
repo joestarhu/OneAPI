@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from api.config.security import client_aes_api, hash_api, jwt_api
 from api.model.user import UserStatus
 from api.model.org import OrgUserStatus
@@ -28,6 +29,42 @@ class Jwt:
 api = APIRouter(prefix="/auth")
 
 
+@api.post("/docs_login")
+async def dosc_login(data=Depends(OAuth2PasswordRequestForm), session=Depends(get_session)):
+
+    try:
+        password = data.password
+
+        # 取默认的密码信息
+        user = AuthAPI.get_account_auth_info(session, data.username)
+
+        # 用户是否存在以及账密是否一致
+        if user is None or hash_api.verify(password, user["auth_value"]) == False:
+            return Rsp(**APIErrors.LOGIN_WRONG_ACCOUNT_PASSWD.value)
+
+        # 用户密码认证通过后再判断登录状态是否有效
+        if user["user_status"] != UserStatus.ENABLE.value:
+            return Rsp(**APIErrors.LOGIN_ACCOUNT_STATUS_DISABLE.value)
+
+        # 构建用户jwt
+        jwt = Jwt(user_uuid=user["user_uuid"])
+
+        # 获取用户的有效可登录的组织信息
+        org_list = AuthAPI.get_user_org_list(session, user["user_uuid"])
+
+        if org_list and len(org_list) == 1:
+            jwt.org_uuid = org_list[0]["org_uuid"]
+            jwt.org_owner = user["user_uuid"] == org_list[0]["owner_uuid"]
+            jwt.org_is_admin = org_list[0]["is_admin"]
+
+        payload = jwt_api.encode(**asdict(jwt))
+
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+
+    return {"access_token": payload, "token_type": "bearer"}
+
+
 @api.post("/password", summary="账号密码登录")
 async def password_login(data: PasswordLogin,
                          session=Depends(get_session)
@@ -44,7 +81,7 @@ async def password_login(data: PasswordLogin,
             return Rsp(**APIErrors.LOGIN_WRONG_ACCOUNT_PASSWD.value)
 
         # 用户密码认证通过后再判断登录状态是否有效
-        if user["status"] != UserStatus.ENABLE.value:
+        if user["user_status"] != UserStatus.ENABLE.value:
             return Rsp(**APIErrors.LOGIN_ACCOUNT_STATUS_DISABLE.value)
 
         # 构建用户jwt
@@ -53,9 +90,10 @@ async def password_login(data: PasswordLogin,
         # 获取用户的有效可登录的组织信息
         org_list = AuthAPI.get_user_org_list(session, user["user_uuid"])
 
-        if org_list and len(org_list) == 1 and org_list[0]["org_user_status"] == OrgUserStatus.ENABLE.value:
+        if org_list and len(org_list) == 1:
             jwt.org_uuid = org_list[0]["org_uuid"]
             jwt.org_owner = user["user_uuid"] == org_list[0]["owner_uuid"]
+            jwt.org_is_admin = org_list[0]["is_admin"]
 
         payload = jwt_api.encode(**asdict(jwt))
     except Exception as e:
@@ -64,9 +102,9 @@ async def password_login(data: PasswordLogin,
 
 
 @api.post("/choose_org", summary="选择登录的组织")
-async def choose_org() -> Rsp:
+async def choose_org(actor=Depends(get_login_user)) -> Rsp:
     try:
-        NotImplementedError
+        raise NotImplementedError
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp()
@@ -75,11 +113,10 @@ async def choose_org() -> Rsp:
 @api.get("/org", summary="获取已登录用户所属的组织信息")
 async def get_user_orgs(actor=Depends(get_login_user)) -> Rsp:
     try:
-        NotImplementedError
+        org_list = AuthAPI.get_user_org_list(actor.session, actor.user_uuid)
     except Exception as e:
         raise HTTPException(500, f"{e}")
-
-    return Rsp()
+    return Rsp(data=org_list)
 
 
 @api.get("/org_user", summary="获取已登录组织用户的信息")

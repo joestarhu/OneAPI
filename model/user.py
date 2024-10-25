@@ -31,15 +31,14 @@ class User(ModelBase):
                          comment="用户账号"
                          )
 
-    phone_enc: M[str] = mc(String(256),
-                           unique=True,
-                           default="",
-                           comment="用户手机号(加密)"
-                           )
-
     nick_name: M[str] = mc(String(64),
                            default="",
                            comment="用户昵称"
+                           )
+
+    phone_enc: M[str] = mc(String(256),
+                           default="",
+                           comment="用户手机号(加密)"
                            )
 
     avatar_url: M[str] = mc(String(256),

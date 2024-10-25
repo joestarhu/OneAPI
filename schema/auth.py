@@ -48,13 +48,15 @@ class AuthAPI:
         stmt = select(
             Org.org_uuid,
             Org.owner_uuid,
+            Org.is_admin,
             OrgUser.org_user_status
         ).join_from(
             Org, OrgUser, Org.org_uuid == OrgUser.org_uuid
         ).where(and_(
             Org.is_deleted == False,
             Org.org_status == OrgStatus.ENABLE.value,
-            OrgUser.user_uuid == user_uuid
+            OrgUser.user_uuid == user_uuid,
+            OrgUser.org_user_status == OrgUserStatus.ENABLE.value
         ))
 
         return ORM.all(session, stmt)

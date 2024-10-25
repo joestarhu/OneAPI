@@ -42,6 +42,10 @@ class APIErrors:
         code=2003,
         message="超级管理员账号不允许修改或删除"
     )
+    USER_ORG_OWN_DELETE_DINED = ErrInfo(
+        code=2004,
+        message="组织的所有者不允许删除"
+    )
 
     # 组织业务
     ORG_NAME_ALREADY_EXISTS = ErrInfo(

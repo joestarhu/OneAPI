@@ -8,12 +8,13 @@ api = APIRouter(prefix="/org")
 
 @api.get("/list", summary="获取组织列表信息")
 async def get_org_list(org_name: str = Query(default="", description="组织名称"),
-                       status: int = Query(default=None, description="组织状态"),
+                       org_status: int = Query(
+                           default=None, description="组织状态"),
                        pagination=Depends(get_pagination),
                        actor=Security(get_actor_info, scopes=["org:list"])
                        ) -> Rsp:
     try:
-        data = OrgAPI.get_org_list(actor, pagination, org_name, status)
+        data = OrgAPI.get_org_list(actor, pagination, org_name, org_status)
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)

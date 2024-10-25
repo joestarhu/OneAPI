@@ -13,16 +13,16 @@ from .errcode import APIErrors
 class OrgCreate(BaseModel):
     org_name: str = Field(description="组织名称")
     owner_uuid: str = Field(description="组织所有者UUID")
-    remark: str = Field(description="组织备注")
-    status: int = Field(default=OrgStatus.ENABLE.value, description="组织状态")
+    org_remark: str = Field(description="组织备注")
+    org_status: int = Field(default=OrgStatus.ENABLE.value, description="组织状态")
 
 
 class OrgUpdate(BaseModel):
     org_uuid: str = Field(description="组织UUID")
     org_name: str = Field(description="组织名称")
     owner_uuid: str = Field(description="组织所有者UUID")
-    remark: str = Field(description="组织备注")
-    status: int = Field(description="组织状态")
+    org_remark: str = Field(description="组织备注")
+    org_status: int = Field(description="组织状态")
 
 
 class OrgDelete(BaseModel):
@@ -31,10 +31,10 @@ class OrgDelete(BaseModel):
 
 class OrgAPI:
     @staticmethod
-    def get_org_list(actor: Actor, pagination: Pagination, org_name: str = "",  status: int = None):
-        expressionss = [expression for condition, expression in [
-            (org_name, Org.org_name.contains(org_name)),
-            (status is not None, Org.status == status),
+    def get_org_list(actor: Actor, pagination: Pagination, org_name: str = "",  org_status: int = None):
+        expressions = [expression for condition, expression in [
+            (org_name, Org.org_name.ilike(f"%{org_name}%")),
+            (org_status is not None, Org.org_status == org_status),
         ] if condition]
 
         stmt = select(
@@ -42,14 +42,14 @@ class OrgAPI:
             Org.org_name,
             User.nick_name.label("owner_name"),
             Org.org_status,
-            Org.remark,
+            Org.org_remark,
             Org.created_at,
             Org.updated_at,
         ).join_from(
             Org, User, Org.owner_uuid == User.user_uuid, isouter=True
         ).where(and_(
             Org.is_deleted == False,
-            *expressionss
+            *expressions
         ))
 
         return ORM.pagination(actor.session, stmt, pagination.page_idx,
@@ -62,7 +62,7 @@ class OrgAPI:
             Org.org_name,
             User.user_uuid,
             User.nick_name.label("owner_name"),
-            Org.remark,
+            Org.org_remark,
             Org.org_status
         ).join_from(
             Org, User, Org.owner_uuid == User.user_uuid, isouter=True

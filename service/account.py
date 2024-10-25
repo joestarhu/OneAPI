@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from api.schema.user import UserAPI, AccountCreate, AccountUpdate, AccountDelete
-from .base import get_actor_info, get_pagination, Rsp
+from .base import get_actor_info, get_pagination, get_session, Rsp
 
 api = APIRouter(prefix="/account")
 
 
 @api.get("/list", summary="获取账号列表信息")
 async def get_list(phone: str = Query(default="", description="手机号"),
+                   account: str = Query(default="", description="账号"),
                    nick_name: str = Query(default="", description="用户昵称"),
                    status: int = Query(default=None, description="用户状态"),
                    pagination=Depends(get_pagination),
@@ -14,7 +15,7 @@ async def get_list(phone: str = Query(default="", description="手机号"),
                    ) -> Rsp:
     try:
         data = UserAPI.get_account_list(
-            actor, pagination, phone, nick_name, status)
+            actor, pagination, account, nick_name, phone, status)
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)
@@ -62,3 +63,12 @@ async def acct_delete(data: AccountDelete,
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(**result.value)
+
+
+@api.get("/get_acct_status_info")
+async def get_acct_status_info() -> Rsp:
+    try:
+        ...
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp()
