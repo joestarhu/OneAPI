@@ -1,6 +1,6 @@
 # from api.schema.org import OrgAPI, OrgCreate, OrgUpdate, OrgDelete
 from fastapi import APIRouter, HTTPException, Query, Depends, Security
-from api.schema.org import OrgAPI
+from api.schema.org import OrgAPI, OrgCreate
 from .base import Rsp, get_pagination, get_actor_info
 
 api = APIRouter(prefix="/org")
@@ -31,15 +31,15 @@ async def get_org_detail(org_uuid: str = Query(description="组织UUID"),
     return Rsp(data=data)
 
 
-# @api.post("/create", summary="创建组织")
-# async def create_org(data: OrgCreate,
-#                      actor=Security(get_actor_info, scopes=["org:create"])
-#                      ) -> Rsp:
-#     try:
-#         result = OrgAPI.create_org(actor, data)
-#     except Exception as e:
-#         raise HTTPException(500, f"{e}")
-#     return Rsp(**result.value)
+@api.post("/create", summary="创建组织")
+async def create_org(data: OrgCreate,
+                     actor=Security(get_actor_info, scopes=["org:create"])
+                     ) -> Rsp:
+    try:
+        result = OrgAPI.create_org(actor, data)
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp(**result.value)
 
 # @api.post("/update", summary="修改组织")
 # async def update_org(data: OrgUpdate,

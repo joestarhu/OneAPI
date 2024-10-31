@@ -2,10 +2,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, update, and_, or_
 from sqlalchemy.orm import Session
 from jhu.orm import ORM, ORMCheckRule
-from api.model.org import Org, OrgUser, OrgStatus
+from api.model.org import Org, OrgUser, OrgUserRole, OrgStatus
 from api.model.user import User, UserStatus
 from api.config.security import generate_uuid_str
-from .account import AccountAPI
+from .user import UserAPI
 from .base import Pagination, Actor
 from .errcode import APIErrors
 
@@ -100,25 +100,25 @@ class OrgAPI:
 
     @staticmethod
     def create_org(actor: Actor, data: OrgCreate) -> APIErrors:
+        """创建组织"""
         try:
             session = actor.session
 
             if result := OrgAPI.check_org_unique(session, data.org_name):
                 return result
 
-            # 判断owner是否有效
-            user = AccountAPI.get_account_detail(actor, data.owner_uuid)
-            if user is None:
+            # 获取owner的详情
+            if (owner := UserAPI.get_account_detail(actor, data.owner_uuid)) is None:
                 return APIErrors.ORG_OWNER_NOT_AVAIABLE
 
-            org = Org(org_uuid=generate_uuid_str(),
-                      **data.model_dump()
-                      )
+            # 创建组织信息
+            org = Org(org_uuid=generate_uuid_str(), **data.model_dump())
 
+            # 创建组织用户信息
             org_user = OrgUser(
                 org_uuid=org.org_uuid,
                 user_uuid=org.owner_uuid,
-                user_name=user["nick_name"]
+                org_user_name=owner["nick_name"]
             )
 
             session.add_all([org, org_user])

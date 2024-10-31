@@ -142,6 +142,24 @@ class UserAPI:
         return ORM.one(actor.session, stmt, format_rules)
 
     @staticmethod
+    def get_account_orgs(actor: Actor,
+                         pagination: Pagination,
+                         user_uuid: str) -> list:
+        """获取账户组织信息"""
+        stmt = select(
+            Org.org_name,
+            Org.org_status,
+            OrgUser.org_user_status,
+        ).join(
+            OrgUser, OrgUser.org_uuid == Org.org_uuid
+        ).where(and_(
+            Org.is_deleted == False,
+            OrgUser.user_uuid == user_uuid
+        ))
+
+        return ORM.pagination(actor.session, stmt, page_idx=pagination.page_idx, page_size=pagination.page_size)
+
+    @staticmethod
     def create_account(data: AccountCreate,
                        actor: Actor
                        ) -> APIErrors:

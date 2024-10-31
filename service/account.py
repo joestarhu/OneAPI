@@ -32,6 +32,18 @@ async def get_detail(user_uuid: str = Query(description="用户UUID"),
     return Rsp(data=data)
 
 
+@api.get("/orgs", summary="获取账号组织信息")
+async def get_acct_orgs(user_uuid: str = Query(description="用户UUID"),
+                        pagination=Depends(get_pagination),
+                        actor=Security(get_actor_info, scopes=["acct:detail"])
+                        ) -> Rsp:
+    try:
+        data = UserAPI.get_account_orgs(actor, pagination, user_uuid)
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp(data=data)
+
+
 @api.post("/create", summary="创建账号")
 async def acct_create(data: AccountCreate,
                       actor=Security(get_actor_info, scopes=["acct:create"])
@@ -63,12 +75,3 @@ async def acct_delete(data: AccountDelete,
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(**result.value)
-
-
-@api.get("/get_acct_status_info")
-async def get_acct_status_info() -> Rsp:
-    try:
-        ...
-    except Exception as e:
-        raise HTTPException(500, f"{e}")
-    return Rsp()

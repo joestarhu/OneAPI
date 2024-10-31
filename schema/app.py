@@ -13,7 +13,7 @@ class AppAPI:
                      ) -> list:
         """获取应用列表"""
         expressions = [expression for condition, expression in [
-            (app_name, App.app_name.contains(app_name)),
+            (app_name, App.app_name.ilike(f"%{app_name}%")),
             (app_status is not None, App.app_status == app_status)
         ] if condition]
 
@@ -32,6 +32,7 @@ class AppAPI:
 
     @staticmethod
     def get_service_list(actor: Actor,
+                         pagination: Pagination,
                          app_id: int):
         """获取应用服务"""
         stmt = select(AppService.id,
@@ -41,4 +42,7 @@ class AppAPI:
                           AppService.app_id == app_id
                       ))
 
-        return ORM.all(actor.session, stmt)
+        return ORM.pagination(actor.session, stmt,
+                              page_idx=pagination.page_idx, page_size=pagination.page_size,
+                              order=[AppService.service_tag.asc()]
+                              )
