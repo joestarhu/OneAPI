@@ -28,3 +28,14 @@ async def get_service_list(app_id: int = Query(description="应用ID"),
     except Exception as e:
         raise HTTPException(500, f"{e}")
     return Rsp(data=data)
+
+
+@api.get("/service_role_permission", summary="获取应用角色权限")
+async def get_service_role(app_id: int = Query(description="应用ID"),
+                           role_id: int = Query(description="角色ID"),
+                           ):
+    try:
+        ...
+    except Exception as e:
+        raise HTTPException(500, f"{e}")
+    return Rsp()

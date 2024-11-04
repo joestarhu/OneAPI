@@ -149,7 +149,7 @@ class UserAPI:
         stmt = select(
             Org.org_name,
             Org.org_status,
-            OrgUser.org_user_status,
+            Org.owner_uuid,
         ).join(
             OrgUser, OrgUser.org_uuid == Org.org_uuid
         ).where(and_(

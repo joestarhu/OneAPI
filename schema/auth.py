@@ -47,6 +47,7 @@ class AuthAPI:
         """获取用户的组织信息"""
         stmt = select(
             Org.org_uuid,
+            Org.org_name,
             Org.owner_uuid,
             Org.is_admin,
             OrgUser.org_user_status

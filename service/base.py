@@ -57,7 +57,11 @@ def get_actor_info(security_scope: SecurityScopes,
                    actor=Depends(get_login_user)
                    ) -> Actor:
     try:
-        ...
+
+        # 组织所有者无需鉴权
+        if actor.is_org_owner:
+            return actor
+
     except HTTPException as e:
         raise e
     except Exception as e:
